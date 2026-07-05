@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.0
+
+- Added `agentic-risk-scan report --format html` for a standalone HTML report
+  suitable for CI artifacts, security reviews, and demos.
+- Added HTML report tests for severity styling, finding content, and inventory
+  content.
+- Extended the composite GitHub Action with `command: scan|report|inventory`
+  so workflows can generate scan results, Markdown/HTML reports, or inventory
+  files without custom shell glue.
+
 ## 0.7.0
 
 - Added `agentic-risk-scan report` to generate a combined Markdown report with

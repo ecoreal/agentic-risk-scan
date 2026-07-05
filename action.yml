@@ -3,12 +3,16 @@ description: Scan GitHub Actions, MCP configs, and agent instruction files for A
 author: Agentic Risk Scan Contributors
 
 inputs:
+  command:
+    description: Command to run: scan, report, or inventory.
+    required: false
+    default: "scan"
   path:
     description: Repository path to scan.
     required: false
     default: "."
   format:
-    description: Output format: text, json, markdown, or sarif.
+    description: Output format. scan supports text/json/markdown/sarif/github; report supports markdown/html; inventory supports text/json/markdown.
     required: false
     default: "sarif"
   output:
@@ -50,14 +54,49 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        args=(scan "${{ inputs.path }}" --format "${{ inputs.format }}" --output "${{ inputs.output }}" --fail-on "${{ inputs.fail_on }}")
+        command="${{ inputs.command }}"
+        case "$command" in
+          scan|report|inventory) ;;
+          *)
+            echo "unsupported command: $command" >&2
+            exit 2
+            ;;
+        esac
+
+        format="${{ inputs.format }}"
+        output="${{ inputs.output }}"
+        if [ "$command" = "report" ] && [ "$format" = "sarif" ]; then
+          format="html"
+        fi
+        if [ "$command" = "report" ] && [ "$output" = "agentic-risk.sarif" ]; then
+          output="agentic-risk-report.html"
+        fi
+        if [ "$command" = "inventory" ] && [ "$format" = "sarif" ]; then
+          format="markdown"
+        fi
+        if [ "$command" = "inventory" ] && [ "$output" = "agentic-risk.sarif" ]; then
+          output="agentic-risk-inventory.md"
+        fi
+
+        args=("$command" "${{ inputs.path }}" --format "$format" --output "$output")
+        if [ "$command" != "inventory" ]; then
+          args+=(--fail-on "${{ inputs.fail_on }}")
+        fi
         if [ -n "${{ inputs.baseline }}" ]; then
+          if [ "$command" = "inventory" ]; then
+            echo "baseline is only supported for scan and report" >&2
+            exit 2
+          fi
           args+=(--baseline "${{ inputs.baseline }}")
         fi
         if [ -n "${{ inputs.config }}" ]; then
           args+=(--config "${{ inputs.config }}")
         fi
         if [ -n "${{ inputs.changed_from }}" ]; then
+          if [ "$command" = "inventory" ]; then
+            echo "changed_from is only supported for scan and report" >&2
+            exit 2
+          fi
           args+=(--changed-from "${{ inputs.changed_from }}" --changed-to "${{ inputs.changed_to }}" --diff-filter "${{ inputs.diff_filter }}")
         fi
         agentic-risk-scan "${args[@]}"

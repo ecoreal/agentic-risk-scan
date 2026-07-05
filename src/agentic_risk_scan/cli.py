@@ -42,7 +42,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_inventory_args(inventory)
     inventory.set_defaults(func=run_inventory)
 
-    report = subparsers.add_parser("report", help="write a combined Markdown scan and inventory report")
+    report = subparsers.add_parser("report", help="write a combined scan and inventory report")
     add_report_args(report)
     report.set_defaults(func=run_report)
 
@@ -242,7 +242,13 @@ def add_report_args(parser: argparse.ArgumentParser) -> None:
         "--output",
         "-o",
         type=Path,
-        help="write the Markdown report to a file instead of stdout",
+        help="write the report to a file instead of stdout",
+    )
+    parser.add_argument(
+        "--format",
+        choices=("markdown", "html"),
+        default="markdown",
+        help="report output format",
     )
     parser.add_argument(
         "--fail-on",
@@ -438,7 +444,7 @@ def run_report(args: argparse.Namespace) -> int:
         scan_result.findings = filter_baseline(scan_result.findings, load_baseline(baseline_path))
 
     inventory_result = collect_inventory(path, config=config)
-    output = render_audit_report(scan_result, inventory_result)
+    output = render_audit_report(scan_result, inventory_result, fmt=args.format)
     if args.output:
         args.output.write_text(output, encoding="utf-8")
     else:

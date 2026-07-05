@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentic-risk-scan"
-version = "0.7.0"
+version = "0.8.0"
 description = "Dependency-free static scanner for AI agent workflow and MCP risks."
 readme = "README.md"
 requires-python = ">=3.10"

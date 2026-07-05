@@ -296,6 +296,31 @@ jobs:
             self.assertIn("Risk score", text)
             self.assertIn("AGENT005", text)
 
+    def test_report_html_format(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            instructions = root / "AGENTS.md"
+            instructions.write_text("allowed-tools: *\n", encoding="utf-8")
+
+            code, stdout, _ = capture_cli(["report", str(root), "--format", "html", "--fail-on", "none"])
+
+            self.assertEqual(0, code)
+            self.assertIn("<!doctype html>", stdout)
+            self.assertIn("<title>Agentic Risk Report</title>", stdout)
+            self.assertIn("severity-medium", stdout)
+            self.assertIn("AGENT005", stdout)
+            self.assertIn("Attack Surface Inventory", stdout)
+
+    def test_composite_action_supports_report_command(self) -> None:
+        action = Path(__file__).resolve().parents[1] / "action.yml"
+        text = action.read_text(encoding="utf-8")
+
+        self.assertIn("command:", text)
+        self.assertIn("scan|report|inventory", text)
+        self.assertIn('args=("$command"', text)
+        self.assertIn('format="html"', text)
+        self.assertIn('output="agentic-risk-report.html"', text)
+
     def test_changed_only_scans_selected_paths(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

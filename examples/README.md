@@ -20,6 +20,7 @@ Run:
 
 ```bash
 PYTHONPATH=../src python3 -m agentic_risk_scan scan unsafe-ai-pr-bot --fail-on none
+PYTHONPATH=../src python3 -m agentic_risk_scan report unsafe-ai-pr-bot --format html --output unsafe-ai-pr-bot-report.html --fail-on none
 ```
 
 ## `safe-agent-workflow`

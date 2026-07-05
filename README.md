@@ -22,6 +22,7 @@ Read the deeper context:
 - [Research notes](docs/research.md)
 - [Project brief](docs/project-brief.md)
 - [Threat model](docs/threat-model.md)
+- [Reporting guide](docs/reporting.md)
 
 ## Quick Start
 
@@ -64,6 +65,7 @@ Generate a combined Markdown review report:
 
 ```bash
 agentic-risk-scan report . --output agentic-risk-report.md
+agentic-risk-scan report . --format html --output agentic-risk-report.html
 ```
 
 Create a starter config:
@@ -239,6 +241,7 @@ summary, recommended next actions, and reproduction commands:
 
 ```bash
 agentic-risk-scan report . --output agentic-risk-report.md --fail-on high
+agentic-risk-scan report . --format html --output agentic-risk-report.html --fail-on high
 ```
 
 ## Pull Request Mode
@@ -287,9 +290,22 @@ agentic-risk-scan report . --output agentic-risk-report.md
 ```
 
 The report combines scan findings and inventory output into a Markdown document
-with an executive summary and recommended next actions. It honors the same
-project config, baseline, changed-file, inline-ignore, output, and fail-threshold
-controls used by `scan`.
+or standalone HTML document with an executive summary and recommended next
+actions. It honors the same project config, baseline, changed-file,
+inline-ignore, output, and fail-threshold controls used by `scan`.
+
+In GitHub Actions, this repository can generate a report directly:
+
+```yaml
+- uses: ecoreal/agentic-risk-scan@v0
+  with:
+    command: report
+    format: html
+    output: agentic-risk-report.html
+    fail_on: high
+```
+
+See [docs/reporting.md](docs/reporting.md) for CI artifact examples.
 
 ## Design Principles
 
