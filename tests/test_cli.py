@@ -136,6 +136,39 @@ jobs:
             self.assertEqual(0, first)
             self.assertEqual(2, second)
 
+    def test_init_ci_writes_default_workflow(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workflow = root / ".github" / "workflows" / "agentic-risk-scan.yml"
+
+            code = run_cli(["init-ci", "--output", str(workflow)])
+
+            self.assertEqual(0, code)
+            text = workflow.read_text(encoding="utf-8")
+            self.assertIn("name: agentic-risk-scan", text)
+            self.assertIn("pull_request:", text)
+            self.assertIn("full-agentic-risk:", text)
+            self.assertIn("uses: ecoreal/agentic-risk-scan@v0", text)
+            self.assertIn('refs/remotes/origin/${{ github.base_ref }}" --depth=1', text)
+            self.assertIn("changed_from: origin/${{ github.base_ref }}", text)
+            self.assertIn("format: sarif", text)
+
+    def test_init_ci_refuses_overwrite_without_force(self) -> None:
+        with TemporaryDirectory() as tmp:
+            workflow = Path(tmp) / "scan.yml"
+
+            first = run_cli(["init-ci", "--output", str(workflow), "--mode", "pr"])
+            second = run_cli(["init-ci", "--output", str(workflow), "--mode", "full"])
+            forced = run_cli(["init-ci", "--output", str(workflow), "--mode", "full", "--force"])
+
+            self.assertEqual(0, first)
+            self.assertEqual(2, second)
+            self.assertEqual(0, forced)
+            text = workflow.read_text(encoding="utf-8")
+            self.assertNotIn("pull_request:", text)
+            self.assertIn("schedule:", text)
+            self.assertIn("jobs:\n  full-agentic-risk:", text)
+
     def test_inline_ignore_suppresses_same_line_finding(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

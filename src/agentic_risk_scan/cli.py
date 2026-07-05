@@ -12,6 +12,7 @@ from .models import SEVERITY_ORDER, ScanConfig
 from .registry import RULES
 from .reporters import render
 from .scanner import scan_path
+from .workflow import DEFAULT_WORKFLOW_PATH, write_workflow
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -43,6 +44,33 @@ def build_parser() -> argparse.ArgumentParser:
         help="config file path to create",
     )
     init_config.set_defaults(func=run_init_config)
+
+    init_ci = subparsers.add_parser("init-ci", help="write a GitHub Actions workflow for this scanner")
+    init_ci.add_argument(
+        "--output",
+        "-o",
+        type=Path,
+        default=DEFAULT_WORKFLOW_PATH,
+        help="workflow path to create",
+    )
+    init_ci.add_argument(
+        "--mode",
+        choices=("pr", "full", "both"),
+        default="both",
+        help="workflow type to generate",
+    )
+    init_ci.add_argument(
+        "--fail-on",
+        choices=("critical", "high", "medium", "low", "info", "none"),
+        default="high",
+        help="severity threshold used by generated workflow",
+    )
+    init_ci.add_argument(
+        "--force",
+        action="store_true",
+        help="overwrite an existing workflow file",
+    )
+    init_ci.set_defaults(func=run_init_ci)
 
     return parser
 
@@ -204,6 +232,16 @@ def run_init_config(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_init_ci(args: argparse.Namespace) -> int:
+    try:
+        write_workflow(args.output, mode=args.mode, fail_on=args.fail_on, force=args.force)
+    except FileExistsError:
+        sys.stderr.write(f"{args.output} already exists\n")
+        return 2
+    sys.stdout.write(f"wrote {args.output}\n")
+    return 0
+
+
 def run_rules(args: argparse.Namespace) -> int:
     if args.format == "json":
         import json
@@ -229,7 +267,7 @@ def run_rules(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
-    commands = {"scan", "rules", "init-config"}
+    commands = {"scan", "rules", "init-config", "init-ci"}
     if not argv or (argv[0] not in commands and not argv[0].startswith("-")):
         argv = ["scan", *argv]
     parser = build_parser()

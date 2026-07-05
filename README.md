@@ -60,6 +60,12 @@ Create a starter config:
 agentic-risk-scan init-config
 ```
 
+Create a ready-to-use GitHub Actions workflow:
+
+```bash
+agentic-risk-scan init-ci
+```
+
 ## What It Finds
 
 - `pull_request_target` workflows that check out untrusted PR code.
@@ -98,6 +104,12 @@ scanned files: 4, skipped files: 0
 
 ## GitHub Actions
 
+Generate this workflow automatically:
+
+```bash
+agentic-risk-scan init-ci --mode both
+```
+
 ```yaml
 name: agentic-risk-scan
 
@@ -118,7 +130,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m pip install agentic-risk-scan
+      - run: python -m pip install "git+https://github.com/ecoreal/agentic-risk-scan@v0"
       - run: agentic-risk-scan scan . --format sarif --output agentic-risk.sarif --fail-on high
       - uses: github/codeql-action/upload-sarif@v3
         if: always()

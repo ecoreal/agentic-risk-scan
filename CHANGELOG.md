@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0
+
+- Added `init-ci` to generate a ready-to-use GitHub Actions workflow.
+- Added workflow generation modes for PR-only, full scan, or both.
+- Added tests for generated workflow output and overwrite behavior.
+
 ## 0.3.0
 
 - Added pull-request friendly changed-file scanning with `--changed`.

@@ -84,6 +84,12 @@ agentic-risk-scan scan . --changed-from origin/main --format github
 In GitHub Actions, use `actions/checkout` with `fetch-depth: 0` or fetch the
 base branch before running this command.
 
+Generate a workflow instead of writing it by hand:
+
+```bash
+agentic-risk-scan init-ci --mode both
+```
+
 ### Existing repository rollout
 
 ```bash
