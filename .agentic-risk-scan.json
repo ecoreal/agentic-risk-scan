@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ecoreal/agentic-risk-scan/main/docs/config.schema.json",
+  "fail_on": "high",
+  "exclude": [
+    "examples/unsafe-ai-pr-bot/**"
+  ],
+  "disabled_rules": [],
+  "suppressions": []
+}
+

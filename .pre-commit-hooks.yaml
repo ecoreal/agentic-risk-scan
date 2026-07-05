@@ -1,0 +1,8 @@
+- id: agentic-risk-scan
+  name: agentic-risk-scan
+  description: Scan AI agent workflows, MCP configs, and agent instruction files.
+  entry: agentic-risk-scan scan --fail-on high
+  language: python
+  pass_filenames: false
+  types_or: [yaml, json, markdown, file]
+

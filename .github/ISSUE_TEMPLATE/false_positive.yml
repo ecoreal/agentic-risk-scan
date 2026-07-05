@@ -1,0 +1,28 @@
+name: False positive
+description: Report a finding that should not have fired.
+title: "False positive: "
+labels: ["false-positive"]
+body:
+  - type: textarea
+    id: finding
+    attributes:
+      label: Finding
+      description: Paste the rule ID, location, and report snippet.
+      placeholder: "AGENT005 at AGENTS.md:1 ..."
+    validations:
+      required: true
+  - type: textarea
+    id: fixture
+    attributes:
+      label: Minimal example
+      description: Provide the smallest safe file content that still triggers the finding.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Why it is safe
+      description: Explain the boundary or control that makes this finding incorrect.
+    validations:
+      required: true
+

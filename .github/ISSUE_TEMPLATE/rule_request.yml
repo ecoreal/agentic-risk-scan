@@ -1,0 +1,27 @@
+name: Rule request
+description: Suggest a new high-signal agentic risk rule.
+title: "Rule request: "
+labels: ["rule-request"]
+body:
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risk
+      description: What agentic workflow or MCP risk should the scanner catch?
+    validations:
+      required: true
+  - type: textarea
+    id: unsafe
+    attributes:
+      label: Unsafe example
+      description: Provide a minimal vulnerable config, workflow, instruction, or script.
+    validations:
+      required: true
+  - type: textarea
+    id: safe
+    attributes:
+      label: Safe example
+      description: Provide the fixed or acceptable pattern if possible.
+    validations:
+      required: false
+

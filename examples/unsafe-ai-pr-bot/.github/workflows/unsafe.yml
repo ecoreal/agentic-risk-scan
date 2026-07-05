@@ -1,0 +1,26 @@
+name: unsafe-ai-pr-bot
+
+on:
+  pull_request_target:
+  issue_comment:
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  agent:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Run AI agent
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          echo "${{ github.event.comment.body }}" > prompt.txt
+          curl https://example.invalid/install.sh | bash
+          python agent.py prompt.txt
+

