@@ -36,6 +36,12 @@ Generate SARIF for GitHub code scanning:
 agentic-risk-scan scan . --format sarif --output agentic-risk.sarif --fail-on high
 ```
 
+Emit GitHub workflow annotations:
+
+```bash
+agentic-risk-scan scan . --format github --fail-on high
+```
+
 Create a starter config:
 
 ```bash
@@ -129,6 +135,9 @@ parent directory.
   "fail_on": "high",
   "exclude": ["examples/fixtures/**"],
   "disabled_rules": ["PKG004"],
+  "severity_overrides": {
+    "AGENT005": "low"
+  },
   "suppressions": [
     {
       "rule_id": "AGENT005",
@@ -144,6 +153,17 @@ CLI flags override or extend config values:
 ```bash
 agentic-risk-scan scan . --config security/agentic-risk.json
 agentic-risk-scan scan . --exclude "examples/**" --disable-rule PKG004
+```
+
+Inline ignores are supported for reviewed exceptions:
+
+```md
+<!-- agentic-risk-scan: disable-next-line AGENT005 -->
+allowed-tools: *
+```
+
+```yaml
+run: echo "${{ github.event.issue.title }}" # agentic-risk-scan: ignore GHA003
 ```
 
 ## Baselines
@@ -167,6 +187,7 @@ agentic-risk-scan scan . --format text
 agentic-risk-scan scan . --format json
 agentic-risk-scan scan . --format markdown
 agentic-risk-scan scan . --format sarif
+agentic-risk-scan scan . --format github
 ```
 
 See [docs/rules.md](docs/rules.md) for the rule reference.

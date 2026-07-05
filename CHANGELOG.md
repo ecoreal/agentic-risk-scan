@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0
+
+- Added centralized rule metadata registry.
+- Added `agentic-risk-scan rules --format json|markdown`.
+- Added GitHub workflow annotation output with `--format github`.
+- Added inline ignore comments for reviewed exceptions.
+- Added config-level severity overrides.
+- Added SARIF rule help links.
+
 ## 0.1.0
 
 - Initial dependency-free Python CLI.
@@ -9,4 +18,3 @@
 - npm package script rules.
 - Text, JSON, Markdown, and SARIF output.
 - Baseline creation and filtering.
-

@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .models import Finding, ScanResult, SEVERITY_ORDER
+from .registry import RULE_BY_ID
 
 
 def render(result: ScanResult, *, fmt: str) -> str:
@@ -16,6 +17,8 @@ def render(result: ScanResult, *, fmt: str) -> str:
         return render_markdown(result)
     if fmt == "sarif":
         return render_sarif(result)
+    if fmt == "github":
+        return render_github_annotations(result)
     raise ValueError(f"unknown output format: {fmt}")
 
 
@@ -133,11 +136,13 @@ def render_sarif(result: ScanResult) -> str:
 
 
 def sarif_rule(finding: Finding) -> dict[str, Any]:
+    rule = RULE_BY_ID.get(finding.rule_id)
     return {
         "id": finding.rule_id,
         "name": finding.title,
         "shortDescription": {"text": finding.title},
         "fullDescription": {"text": finding.message},
+        "helpUri": rule.help_uri if rule else "https://github.com/ecoreal/agentic-risk-scan/blob/main/docs/rules.md",
         "help": {"text": finding.remediation or finding.message},
         "properties": {
             "tags": list(finding.tags),
@@ -186,3 +191,26 @@ def security_severity(severity: str) -> float:
         "low": 2.5,
         "info": 0.5,
     }[severity]
+
+
+def render_github_annotations(result: ScanResult) -> str:
+    if not result.findings:
+        return ""
+    lines: list[str] = []
+    for finding in result.sorted_findings():
+        command = "error" if finding.rank >= SEVERITY_ORDER["high"] else "warning"
+        location = f"file={escape_annotation_property(finding.location.path)}"
+        if finding.location.line is not None:
+            location += f",line={finding.location.line}"
+        title = escape_annotation_property(f"{finding.rule_id} {finding.title}")
+        message = escape_annotation_data(f"{finding.message} Fix: {finding.remediation}".strip())
+        lines.append(f"::{command} {location},title={title}::{message}")
+    return "\n".join(lines) + "\n"
+
+
+def escape_annotation_property(value: str) -> str:
+    return value.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A").replace(":", "%3A").replace(",", "%2C")
+
+
+def escape_annotation_data(value: str) -> str:
+    return value.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")

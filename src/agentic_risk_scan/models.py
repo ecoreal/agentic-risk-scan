@@ -90,6 +90,7 @@ class ScanConfig:
     max_file_size: int = 1_000_000
     exclude: tuple[str, ...] = ()
     disabled_rules: tuple[str, ...] = ()
+    inline_ignores: bool = True
 
 
 @dataclass

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import Protocol
@@ -78,9 +79,12 @@ def scan_path(path: str | Path, *, config: ScanConfig | None = None) -> ScanResu
             continue
 
         result.scanned_files += 1
+        inline_ignores = parse_inline_ignores(text) if config.inline_ignores else {}
         for rule in interested_rules:
             for finding in rule.scan(rel_path, text):
                 if finding.rule_id not in config.disabled_rules:
+                    if inline_ignored(finding, inline_ignores):
+                        continue
                     result.findings.append(finding)
 
     return result
@@ -109,3 +113,34 @@ def path_excluded(rel_path: Path, patterns: tuple[str, ...]) -> bool:
         return False
     path = rel_path.as_posix()
     return any(fnmatch(path, pattern) or fnmatch(rel_path.name, pattern) for pattern in patterns)
+
+
+IGNORE_PATTERN = re.compile(
+    r"agentic-risk-scan:\s*(?:ignore|disable-next-line)\s+(?P<rules>[A-Z0-9*,_\-\s]+)",
+    re.IGNORECASE,
+)
+
+
+def parse_inline_ignores(text: str) -> dict[int, set[str]]:
+    ignores: dict[int, set[str]] = {}
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        match = IGNORE_PATTERN.search(line)
+        if not match:
+            continue
+        rules = {
+            rule.strip().upper()
+            for rule in re.split(r"[, ]+", match.group("rules"))
+            if rule.strip()
+        }
+        target_line = line_number + 1 if "disable-next-line" in line.lower() else line_number
+        ignores.setdefault(target_line, set()).update(rules)
+    return ignores
+
+
+def inline_ignored(finding: Finding, ignores: dict[int, set[str]]) -> bool:
+    if finding.location.line is None:
+        return False
+    direct = ignores.get(finding.location.line, set())
+    previous = ignores.get(finding.location.line - 1, set())
+    rules = direct | previous
+    return "*" in rules or finding.rule_id in rules

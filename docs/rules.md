@@ -3,48 +3,55 @@
 Agentic Risk Scan uses lightweight static rules. The goal is to catch dangerous
 repository patterns early, not to prove exploitability.
 
+This file is intentionally readable in code review. Machine-readable rule
+metadata is available with:
+
+```bash
+agentic-risk-scan rules --format json
+agentic-risk-scan rules --format markdown
+```
+
 ## GitHub Actions
 
 | Rule | Default severity | Description |
 | --- | --- | --- |
-| `GHA001` | critical | `pull_request_target` checks out untrusted PR head code. |
-| `GHA002` | high | AI or agent workflow has write-capable token on an untrusted trigger. |
-| `GHA003` | high | Untrusted GitHub event text is interpolated into shell. |
-| `GHA004` | medium | Dangerous shell pattern appears in a workflow with untrusted triggers. |
-| `GHA005` | medium/high | Secrets are referenced from an untrusted-trigger workflow. |
-| `GHA006` | high | Untrusted events can reach a self-hosted runner. |
-| `GHA007` | high | OIDC token minting is enabled on an untrusted-trigger workflow. |
+| <a id="gha001"></a>`GHA001` | critical | `pull_request_target` checks out untrusted PR head code. |
+| <a id="gha002"></a>`GHA002` | high | AI or agent workflow has write-capable token on an untrusted trigger. |
+| <a id="gha003"></a>`GHA003` | high | Untrusted GitHub event text is interpolated into shell. |
+| <a id="gha004"></a>`GHA004` | medium | Dangerous shell pattern appears in a workflow with untrusted triggers. |
+| <a id="gha005"></a>`GHA005` | medium/high | Secrets are referenced from an untrusted-trigger workflow. |
+| <a id="gha006"></a>`GHA006` | high | Untrusted events can reach a self-hosted runner. |
+| <a id="gha007"></a>`GHA007` | high | OIDC token minting is enabled on an untrusted-trigger workflow. |
 
 ## Agent Instructions
 
 | Rule | Default severity | Description |
 | --- | --- | --- |
-| `AGENT001` | high | Bidirectional Unicode control character in agent instructions. |
-| `AGENT002` | medium | Zero-width Unicode character in agent instructions. |
-| `AGENT003` | high | Prompt-injection phrase in committed agent instructions. |
-| `AGENT004` | high | Dangerous command embedded in agent instructions. |
-| `AGENT005` | medium | Agent instruction file requests broad tool access. |
+| <a id="agent001"></a>`AGENT001` | high | Bidirectional Unicode control character in agent instructions. |
+| <a id="agent002"></a>`AGENT002` | medium | Zero-width Unicode character in agent instructions. |
+| <a id="agent003"></a>`AGENT003` | high | Prompt-injection phrase in committed agent instructions. |
+| <a id="agent004"></a>`AGENT004` | high | Dangerous command embedded in agent instructions. |
+| <a id="agent005"></a>`AGENT005` | medium | Agent instruction file requests broad tool access. |
 
 ## MCP
 
 | Rule | Default severity | Description |
 | --- | --- | --- |
-| `MCP000` | low | MCP-like config is invalid JSON. |
-| `MCP001` | high | MCP server starts through a shell wrapper. |
-| `MCP002` | high | MCP server uses download-and-execute bootstrap. |
-| `MCP003` | medium | MCP server uses inline interpreter execution. |
-| `MCP004` | medium | MCP server requests broad runtime access. |
-| `MCP005` | high | MCP server executable is loaded from a temporary path. |
-| `MCP006` | low | MCP server has overly broad working directory. |
-| `MCP007` | high | MCP config contains an inline secret-like value. |
-| `MCP008` | medium | MCP server uses an unpinned `npx` package. |
+| <a id="mcp000"></a>`MCP000` | low | MCP-like config is invalid JSON. |
+| <a id="mcp001"></a>`MCP001` | high | MCP server starts through a shell wrapper. |
+| <a id="mcp002"></a>`MCP002` | high | MCP server uses download-and-execute bootstrap. |
+| <a id="mcp003"></a>`MCP003` | medium | MCP server uses inline interpreter execution. |
+| <a id="mcp004"></a>`MCP004` | medium | MCP server requests broad runtime access. |
+| <a id="mcp005"></a>`MCP005` | high | MCP server executable is loaded from a temporary path. |
+| <a id="mcp006"></a>`MCP006` | low | MCP server has overly broad working directory. |
+| <a id="mcp007"></a>`MCP007` | high | MCP config contains an inline secret-like value. |
+| <a id="mcp008"></a>`MCP008` | medium | MCP server uses an unpinned `npx` package. |
 
 ## Package Scripts
 
 | Rule | Default severity | Description |
 | --- | --- | --- |
-| `PKG001` | high | Install lifecycle script runs dangerous shell behavior. |
-| `PKG002` | medium | npm script contains dangerous shell behavior. |
-| `PKG003` | medium | npm script may expose secret environment values. |
-| `PKG004` | low | Dependency is installed from a remote URL. |
-
+| <a id="pkg001"></a>`PKG001` | high | Install lifecycle script runs dangerous shell behavior. |
+| <a id="pkg002"></a>`PKG002` | medium | npm script contains dangerous shell behavior. |
+| <a id="pkg003"></a>`PKG003` | medium | npm script may expose secret environment values. |
+| <a id="pkg004"></a>`PKG004` | low | Dependency is installed from a remote URL. |

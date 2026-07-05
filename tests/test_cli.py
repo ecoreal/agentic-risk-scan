@@ -15,6 +15,14 @@ def run_cli(args: list[str]) -> int:
         return main(args)
 
 
+def capture_cli(args: list[str]) -> tuple[int, str, str]:
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    with redirect_stdout(stdout), redirect_stderr(stderr):
+        code = main(args)
+    return code, stdout.getvalue(), stderr.getvalue()
+
+
 class CLITests(unittest.TestCase):
     def test_json_output_file_and_fail_on_none(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -78,6 +86,28 @@ jobs:
             code = run_cli(["scan", str(root)])
             self.assertEqual(0, code)
 
+    def test_config_severity_override_changes_fail_threshold(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            instructions = root / "AGENTS.md"
+            instructions.write_text("allowed-tools: *\n", encoding="utf-8")
+            config = root / ".agentic-risk-scan.json"
+            config.write_text(
+                json.dumps(
+                    {
+                        "fail_on": "high",
+                        "severity_overrides": {
+                            "AGENT005": "high"
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            code, stdout, _ = capture_cli(["scan", str(root)])
+            self.assertEqual(1, code)
+            self.assertIn("[HIGH] AGENT005", stdout)
+
     def test_config_excludes_files_and_disable_rule(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -104,6 +134,47 @@ jobs:
 
             self.assertEqual(0, first)
             self.assertEqual(2, second)
+
+    def test_inline_ignore_suppresses_same_line_finding(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            instructions = root / "AGENTS.md"
+            instructions.write_text("allowed-tools: *  # agentic-risk-scan: ignore AGENT005\n", encoding="utf-8")
+
+            ignored = run_cli(["scan", str(root), "--fail-on", "medium"])
+            not_ignored = run_cli(["scan", str(root), "--fail-on", "medium", "--no-inline-ignores"])
+
+            self.assertEqual(0, ignored)
+            self.assertEqual(1, not_ignored)
+
+    def test_inline_disable_next_line_suppresses_next_line_finding(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            instructions = root / "AGENTS.md"
+            instructions.write_text(
+                "<!-- agentic-risk-scan: disable-next-line AGENT005 -->\nallowed-tools: *\n",
+                encoding="utf-8",
+            )
+
+            code = run_cli(["scan", str(root), "--fail-on", "medium"])
+            self.assertEqual(0, code)
+
+    def test_github_annotation_format(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            instructions = root / "AGENTS.md"
+            instructions.write_text("allowed-tools: *\n", encoding="utf-8")
+
+            code, stdout, _ = capture_cli(["scan", str(root), "--format", "github", "--fail-on", "none"])
+            self.assertEqual(0, code)
+            self.assertIn("::warning file=AGENTS.md,line=1,title=AGENT005", stdout)
+
+    def test_rules_markdown_format(self) -> None:
+        code, stdout, _ = capture_cli(["rules", "--format", "markdown"])
+
+        self.assertEqual(0, code)
+        self.assertIn("## GitHub Actions", stdout)
+        self.assertIn("| `GHA001` | critical |", stdout)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
@@ -20,6 +20,7 @@ DEFAULT_CONFIG = """{
     "dist/**"
   ],
   "disabled_rules": [],
+  "severity_overrides": {},
   "suppressions": []
 }
 """
@@ -47,9 +48,15 @@ class ProjectConfig:
     baseline: Path | None = None
     exclude: tuple[str, ...] = ()
     disabled_rules: tuple[str, ...] = ()
+    severity_overrides: dict[str, str] = field(default_factory=dict)
     suppressions: tuple[Suppression, ...] = field(default_factory=tuple)
 
     def filter_findings(self, findings: list[Finding]) -> list[Finding]:
+        if self.severity_overrides:
+            findings = [
+                replace(finding, severity=self.severity_overrides.get(finding.rule_id, finding.severity))
+                for finding in findings
+            ]
         if not self.suppressions:
             return findings
         return [
@@ -89,12 +96,14 @@ def load_project_config(root: Path, path: Path | None = None, *, no_config: bool
     baseline_path = resolve_optional_path(config_path.parent, baseline)
 
     suppressions = tuple(parse_suppression(config_path, item) for item in as_list(data.get("suppressions")))
+    severity_overrides = parse_severity_overrides(config_path, data.get("severity_overrides", {}))
     return ProjectConfig(
         path=config_path,
         fail_on=fail_on,
         baseline=baseline_path,
         exclude=tuple(str(item) for item in as_list(data.get("exclude"))),
         disabled_rules=tuple(str(item) for item in as_list(data.get("disabled_rules"))),
+        severity_overrides=severity_overrides,
         suppressions=suppressions,
     )
 
@@ -109,6 +118,20 @@ def parse_suppression(config_path: Path, item: Any) -> Suppression:
         fingerprint = str(fingerprint)
     reason = str(item.get("reason", ""))
     return Suppression(rule_id=rule_id, path=path, fingerprint=fingerprint, reason=reason)
+
+
+def parse_severity_overrides(config_path: Path, value: Any) -> dict[str, str]:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError(f"{config_path}: severity_overrides must be an object")
+    overrides: dict[str, str] = {}
+    for rule_id, severity in value.items():
+        severity_value = str(severity)
+        if severity_value not in SEVERITY_ORDER:
+            raise ValueError(f"{config_path}: invalid severity override for {rule_id}: {severity_value}")
+        overrides[str(rule_id).upper()] = severity_value
+    return overrides
 
 
 def as_list(value: Any) -> list[Any]:

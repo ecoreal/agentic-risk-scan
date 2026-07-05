@@ -8,6 +8,7 @@ from . import __version__
 from .baseline import filter_baseline, load_baseline, write_baseline
 from .config import load_project_config, write_default_config
 from .models import SEVERITY_ORDER, ScanConfig
+from .registry import RULES
 from .reporters import render
 from .scanner import scan_path
 
@@ -25,6 +26,12 @@ def build_parser() -> argparse.ArgumentParser:
     scan.set_defaults(func=run_scan)
 
     list_rules = subparsers.add_parser("rules", help="list built-in rule identifiers")
+    list_rules.add_argument(
+        "--format",
+        choices=("text", "json", "markdown"),
+        default="text",
+        help="rule list output format",
+    )
     list_rules.set_defaults(func=run_rules)
 
     init_config = subparsers.add_parser("init-config", help="write a starter .agentic-risk-scan.json")
@@ -48,7 +55,7 @@ def add_scan_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--format",
-        choices=("text", "json", "markdown", "sarif"),
+        choices=("text", "json", "markdown", "sarif", "github"),
         default="text",
         help="report output format",
     )
@@ -102,6 +109,11 @@ def add_scan_args(parser: argparse.ArgumentParser) -> None:
         help="scan ignored/generated directories such as node_modules and .git",
     )
     parser.add_argument(
+        "--no-inline-ignores",
+        action="store_true",
+        help="do not honor agentic-risk-scan inline ignore comments",
+    )
+    parser.add_argument(
         "--max-file-size",
         type=int,
         default=1_000_000,
@@ -119,6 +131,7 @@ def run_scan(args: argparse.Namespace) -> int:
         max_file_size=args.max_file_size,
         exclude=tuple(project_config.exclude) + tuple(args.exclude),
         disabled_rules=tuple(project_config.disabled_rules) + tuple(args.disable_rule),
+        inline_ignores=not args.no_inline_ignores,
     )
     result = scan_path(path, config=config)
     result.findings = project_config.filter_findings(result.findings)
@@ -153,36 +166,24 @@ def run_init_config(args: argparse.Namespace) -> int:
 
 
 def run_rules(args: argparse.Namespace) -> int:
-    del args
-    rules = [
-        ("GHA001", "critical", "pull_request_target checks out untrusted PR code"),
-        ("GHA002", "high", "AI agent workflow has write-capable token on untrusted trigger"),
-        ("GHA003", "high", "Untrusted GitHub event data is interpolated into shell"),
-        ("GHA004", "medium", "Dangerous shell pattern in untrusted workflow"),
-        ("GHA005", "medium/high", "Secrets are available in workflow with untrusted trigger"),
-        ("GHA006", "high", "Untrusted trigger can reach a self-hosted runner"),
-        ("GHA007", "high", "OIDC token can be minted from untrusted workflow"),
-        ("AGENT001", "high", "Bidirectional control character in agent instructions"),
-        ("AGENT002", "medium", "Zero-width character in agent instructions"),
-        ("AGENT003", "high", "Prompt-injection phrase in agent instructions"),
-        ("AGENT004", "high", "Dangerous command embedded in agent instructions"),
-        ("AGENT005", "medium", "Agent instructions request broad tool access"),
-        ("MCP000", "low", "MCP config is invalid JSON"),
-        ("MCP001", "high", "MCP server starts through a shell wrapper"),
-        ("MCP002", "high", "MCP server uses download-and-execute bootstrap"),
-        ("MCP003", "medium", "MCP server uses inline interpreter execution"),
-        ("MCP004", "medium", "MCP server requests broad runtime access"),
-        ("MCP005", "high", "MCP server executable is loaded from a temporary path"),
-        ("MCP006", "low", "MCP server has overly broad working directory"),
-        ("MCP007", "high", "MCP config contains inline secret-like environment value"),
-        ("MCP008", "medium", "MCP server uses unpinned npx package"),
-        ("PKG001", "high", "Install lifecycle script runs dangerous shell behavior"),
-        ("PKG002", "medium", "npm script contains dangerous shell behavior"),
-        ("PKG003", "medium", "npm script may expose secret environment values"),
-        ("PKG004", "low", "Dependency is installed from a remote URL"),
-    ]
-    for rule_id, severity, title in rules:
-        sys.stdout.write(f"{rule_id:<8} {severity:<11} {title}\n")
+    if args.format == "json":
+        import json
+
+        sys.stdout.write(json.dumps([rule.__dict__ for rule in RULES], indent=2, sort_keys=True) + "\n")
+        return 0
+    if args.format == "markdown":
+        current_category = None
+        for rule in RULES:
+            if rule.category != current_category:
+                if current_category is not None:
+                    sys.stdout.write("\n")
+                sys.stdout.write(f"## {rule.category}\n\n")
+                sys.stdout.write("| Rule | Severity | Description |\n| --- | --- | --- |\n")
+                current_category = rule.category
+            sys.stdout.write(f"| `{rule.rule_id}` | {rule.severity} | {rule.title} |\n")
+        return 0
+    for rule in RULES:
+        sys.stdout.write(f"{rule.rule_id:<8} {rule.severity:<11} {rule.title}\n")
     return 0
 
 

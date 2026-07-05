@@ -26,6 +26,12 @@
         "type": "string"
       }
     },
+    "severity_overrides": {
+      "type": "object",
+      "additionalProperties": {
+        "enum": ["critical", "high", "medium", "low", "info"]
+      }
+    },
     "suppressions": {
       "type": "array",
       "items": {
@@ -49,4 +55,3 @@
     }
   }
 }
-
