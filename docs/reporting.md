@@ -23,6 +23,14 @@ changed-file scans, inline ignores, disabled rules, and fail thresholds.
 
 ## GitHub Actions Artifact
 
+Generate a ready-to-use workflow:
+
+```bash
+agentic-risk-scan init-ci --report-artifact
+```
+
+Or write the workflow manually:
+
 ```yaml
 name: agentic-risk-report
 

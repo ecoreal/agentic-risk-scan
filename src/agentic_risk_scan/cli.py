@@ -80,6 +80,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="overwrite an existing workflow file",
     )
+    init_ci.add_argument(
+        "--report-artifact",
+        action="store_true",
+        help="also upload standalone HTML report artifacts",
+    )
     init_ci.set_defaults(func=run_init_ci)
 
     return parser
@@ -385,7 +390,13 @@ def run_init_config(args: argparse.Namespace) -> int:
 
 def run_init_ci(args: argparse.Namespace) -> int:
     try:
-        write_workflow(args.output, mode=args.mode, fail_on=args.fail_on, force=args.force)
+        write_workflow(
+            args.output,
+            mode=args.mode,
+            fail_on=args.fail_on,
+            report_artifact=args.report_artifact,
+            force=args.force,
+        )
     except FileExistsError:
         sys.stderr.write(f"{args.output} already exists\n")
         return 2

@@ -152,6 +152,22 @@ jobs:
             self.assertIn('refs/remotes/origin/${{ github.base_ref }}" --depth=1', text)
             self.assertIn("changed_from: origin/${{ github.base_ref }}", text)
             self.assertIn("format: sarif", text)
+            self.assertNotIn("upload-artifact", text)
+
+    def test_init_ci_can_upload_html_report_artifacts(self) -> None:
+        with TemporaryDirectory() as tmp:
+            workflow = Path(tmp) / "agentic-risk-scan.yml"
+
+            code = run_cli(["init-ci", "--output", str(workflow), "--report-artifact"])
+
+            self.assertEqual(0, code)
+            text = workflow.read_text(encoding="utf-8")
+            self.assertIn("command: report", text)
+            self.assertIn("format: html", text)
+            self.assertIn("agentic-risk-pr-report.html", text)
+            self.assertIn("agentic-risk-full-report.html", text)
+            self.assertIn("actions/upload-artifact@v4", text)
+            self.assertIn("if: always()", text)
 
     def test_init_ci_refuses_overwrite_without_force(self) -> None:
         with TemporaryDirectory() as tmp:

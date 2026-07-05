@@ -118,6 +118,7 @@ Generate a workflow instead of writing it by hand:
 
 ```bash
 agentic-risk-scan init-ci --mode both
+agentic-risk-scan init-ci --mode both --report-artifact
 ```
 
 ### Existing repository rollout

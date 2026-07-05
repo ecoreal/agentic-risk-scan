@@ -78,6 +78,7 @@ Create a ready-to-use GitHub Actions workflow:
 
 ```bash
 agentic-risk-scan init-ci
+agentic-risk-scan init-ci --report-artifact
 ```
 
 ## What It Finds
@@ -126,6 +127,7 @@ Generate this workflow automatically:
 
 ```bash
 agentic-risk-scan init-ci --mode both
+agentic-risk-scan init-ci --mode both --report-artifact
 ```
 
 ```yaml

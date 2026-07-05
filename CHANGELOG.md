@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.0
+
+- Added `agentic-risk-scan init-ci --report-artifact` to generate GitHub
+  Actions workflows that upload standalone HTML report artifacts.
+- Report artifact workflows now produce PR-scoped reports and full-repository
+  reports with `if: always()` so reviewers can inspect results even when the
+  scan fails the job.
+- Added tests for report artifact workflow generation while preserving the
+  default SARIF/GitHub annotation workflow output.
+
 ## 0.8.0
 
 - Added `agentic-risk-scan report --format html` for a standalone HTML report
