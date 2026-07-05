@@ -252,6 +252,50 @@ jobs:
             config_items = [item for item in payload["items"] if item["category"] == "agent-config"]
             self.assertEqual("fixtures/.claude/settings.json", config_items[0]["path"])
 
+    def test_report_markdown_combines_findings_and_inventory(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workflow = root / ".github" / "workflows" / "agent.yml"
+            instructions = root / "AGENTS.md"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text(
+                """
+on: [issue_comment]
+permissions: write-all
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo agent
+""",
+                encoding="utf-8",
+            )
+            instructions.write_text("allowed-tools: *\n", encoding="utf-8")
+
+            code, stdout, _ = capture_cli(["report", str(root), "--fail-on", "none"])
+
+            self.assertEqual(0, code)
+            self.assertIn("# Agentic Risk Report", stdout)
+            self.assertIn("## Priority Findings", stdout)
+            self.assertIn("## Attack Surface Inventory", stdout)
+            self.assertIn("GHA002", stdout)
+            self.assertIn("AGENT005", stdout)
+            self.assertIn("github-actions", stdout)
+
+    def test_report_output_file_and_fail_threshold(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            instructions = root / "AGENTS.md"
+            report = root / "agentic-risk-report.md"
+            instructions.write_text("allowed-tools: *\n", encoding="utf-8")
+
+            code = run_cli(["report", str(root), "--output", str(report), "--fail-on", "medium"])
+
+            self.assertEqual(1, code)
+            text = report.read_text(encoding="utf-8")
+            self.assertIn("Risk score", text)
+            self.assertIn("AGENT005", text)
+
     def test_changed_only_scans_selected_paths(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

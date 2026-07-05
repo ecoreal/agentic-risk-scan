@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0
+
+- Added `agentic-risk-scan report` to generate a combined Markdown report with
+  scan findings, attack-surface inventory, executive summary, recommended next
+  actions, and reproduction commands.
+- Added report support for project config, baselines, changed-file scans,
+  inline ignores, output files, and fail thresholds.
+- Added tests for report content, output file creation, and CI-style failure
+  behavior.
+
 ## 0.6.0
 
 - Added `agentic-risk-scan inventory` to enumerate repository agentic attack

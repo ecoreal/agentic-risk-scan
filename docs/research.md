@@ -29,6 +29,20 @@ Sources:
 
 - [GitHub Actions secure use reference](https://docs.github.com/en/actions/reference/security/secure-use)
 - [Secure use of `pull_request_target`](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target)
+- [GitHub Actions 2026 security roadmap](https://github.blog/news-insights/product-news/whats-coming-to-our-github-actions-2026-security-roadmap/)
+
+### AI-powered CI is now a documented prompt-injection target
+
+Cloud Security Alliance research notes in 2026 describe prompt injection paths
+through AI-powered GitHub Actions and issue-triggered automation. These reports
+map closely to repository patterns this scanner targets: untrusted issue or PR
+text, workflow permissions, cached or shared execution state, agent tool access,
+and credentials exposed to automated CI behavior.
+
+Sources:
+
+- [AI Agent Prompt Injection: The New CI/CD Supply Chain Threat](https://labs.cloudsecurityalliance.org/research/csa-research-note-claude-code-github-action-prompt-injection/)
+- [Clinejection: Prompt Injection in GitHub Issue Titles Enables CI/CD Cache Poisoning](https://labs.cloudsecurityalliance.org/research/csa-research-note-clinejection-prompt-injection-cicd-cache-p/)
 
 ### MCP moves local tool execution into config
 
@@ -39,6 +53,13 @@ an agent starts, what paths it can reach, and whether it downloads code at
 runtime.
 
 Source: [MCP security best practices](https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices)
+
+OWASP's MCP Top 10 further frames MCP as a distinct agent-tool risk surface,
+including tool poisoning and software supply-chain attacks. That supports
+treating MCP server configuration as reviewable security policy rather than
+ordinary editor settings.
+
+Source: [OWASP MCP Top 10](https://owasp.org/www-project-mcp-top-10/)
 
 ### Agent client settings have become security policy
 
@@ -84,6 +105,9 @@ before a team has a mature AI security program.
 - **Attack-surface mapping:** inventory mode for teams that need to find where
   agent workflows, settings, instructions, MCP configs, and package scripts
   exist before they enforce policy.
+- **Review artifacts:** Markdown reports that combine findings, inventory, and
+  recommended next actions so agent risk can move through PR review and security
+  review without a separate reporting tool.
 - **Security-review language:** every finding must explain the untrusted input,
   the privilege boundary, and the remediation.
 - **Governance support:** baselines, suppressions, inline ignores, severity

@@ -60,6 +60,12 @@ Inventory the agentic attack surface before deciding which policies to enforce:
 agentic-risk-scan inventory . --format markdown
 ```
 
+Generate a combined Markdown review report:
+
+```bash
+agentic-risk-scan report . --output agentic-risk-report.md
+```
+
 Create a starter config:
 
 ```bash
@@ -228,6 +234,13 @@ agentic-risk-scan scan . --format sarif
 agentic-risk-scan scan . --format github
 ```
 
+Generate a combined Markdown report with findings, inventory, executive
+summary, recommended next actions, and reproduction commands:
+
+```bash
+agentic-risk-scan report . --output agentic-risk-report.md --fail-on high
+```
+
 ## Pull Request Mode
 
 Full-repository scans are useful for scheduled audits. Pull request checks often
@@ -263,6 +276,20 @@ Inventory output covers GitHub Actions workflows, agent instruction files,
 Claude/Codex/Gemini settings, MCP configs, and npm package scripts. It is useful
 for rollout planning, security reviews, and before/after reports when adopting
 agent tooling across many repositories.
+
+## Report Mode
+
+Use `report` when you need one artifact for a PR comment, security review, or
+adoption packet:
+
+```bash
+agentic-risk-scan report . --output agentic-risk-report.md
+```
+
+The report combines scan findings and inventory output into a Markdown document
+with an executive summary and recommended next actions. It honors the same
+project config, baseline, changed-file, inline-ignore, output, and fail-threshold
+controls used by `scan`.
 
 ## Design Principles
 
