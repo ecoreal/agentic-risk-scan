@@ -115,7 +115,7 @@ Or use this repository as a composite action:
   with:
     format: sarif
     output: agentic-risk.sarif
-    fail-on: high
+    fail_on: high
 ```
 
 ## Configuration

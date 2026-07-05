@@ -15,7 +15,7 @@ inputs:
     description: Report output path.
     required: false
     default: "agentic-risk.sarif"
-  fail-on:
+  fail_on:
     description: Severity threshold that fails the job, or none.
     required: false
     default: "high"
@@ -38,7 +38,7 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        args=(scan "${{ inputs.path }}" --format "${{ inputs.format }}" --output "${{ inputs.output }}" --fail-on "${{ inputs.fail-on }}")
+        args=(scan "${{ inputs.path }}" --format "${{ inputs.format }}" --output "${{ inputs.output }}" --fail-on "${{ inputs.fail_on }}")
         if [ -n "${{ inputs.baseline }}" ]; then
           args+=(--baseline "${{ inputs.baseline }}")
         fi
@@ -46,4 +46,3 @@ runs:
           args+=(--config "${{ inputs.config }}")
         fi
         agentic-risk-scan "${args[@]}"
-
