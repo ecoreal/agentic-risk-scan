@@ -40,6 +40,20 @@ runtime.
 
 Source: [MCP security best practices](https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices)
 
+### Agent client settings have become security policy
+
+Claude Code, Codex, and Gemini CLI all support committed or project-scoped
+settings that influence tool permissions, sandboxing, approvals, hooks, and
+environment handling. That makes configuration review part of agent security:
+a small settings change can widen shell access, persist approvals, disable
+redaction, or keep secret-like environment variables visible to tool execution.
+
+Sources:
+
+- [Claude Code settings](https://docs.anthropic.com/en/docs/claude-code/settings)
+- [Codex config reference](https://developers.openai.com/codex/config-reference)
+- [Gemini CLI configuration](https://geminicli.com/docs/reference/configuration/)
+
 ### Prompt injection is now a first-class application risk
 
 OWASP's LLM security work treats prompt injection and agent/tool behavior as
@@ -74,7 +88,7 @@ before a team has a mature AI security program.
 - **Platform outputs:** text for humans, JSON for automation, Markdown for
   reports, SARIF for code scanning, GitHub annotations for PR checks.
 - **Ecosystem coverage:** GitHub Actions, agent instruction files, MCP config,
-  and package lifecycle scripts.
+  committed agent client settings, and package lifecycle scripts.
 
 ## Why This Can Earn Stars
 
@@ -87,4 +101,3 @@ explain. This project has a concise pitch:
 The strongest adoption path is not a broad security platform. It is a small
 tool that AI-heavy repos can paste into CI and immediately see whether an agent
 workflow has crossed a trust boundary.
-

@@ -30,6 +30,21 @@ RULES: tuple[RuleInfo, ...] = (
     RuleInfo("AGENT003", "high", "Prompt-injection phrase in agent instructions", "Agent Instructions", ("agent-instructions", "prompt-injection")),
     RuleInfo("AGENT004", "high", "Dangerous command embedded in agent instructions", "Agent Instructions", ("agent-instructions", "shell")),
     RuleInfo("AGENT005", "medium", "Agent instructions request broad tool access", "Agent Instructions", ("agent-instructions", "permissions")),
+    RuleInfo("CFG000", "low", "Agent settings file is invalid JSON", "Agent Config", ("agent-config", "json")),
+    RuleInfo("CFG001", "medium/high", "Agent configuration grants broad tool permission", "Agent Config", ("agent-config", "permissions")),
+    RuleInfo("CFG002", "high", "Agent configuration allows dangerous shell command", "Agent Config", ("agent-config", "shell")),
+    RuleInfo("CFG003", "medium", "Agent configuration grants broad filesystem access", "Agent Config", ("agent-config", "filesystem")),
+    RuleInfo("CFG004", "high", "Agent hook runs dangerous shell command", "Agent Config", ("agent-config", "hooks", "shell")),
+    RuleInfo("CFG005", "medium", "Agent hook may expose secret environment values", "Agent Config", ("agent-config", "hooks", "secrets")),
+    RuleInfo("CFG006", "medium", "Agent tool sandboxing is disabled", "Agent Config", ("agent-config", "sandbox")),
+    RuleInfo("CFG007", "high", "Codex sandbox is disabled", "Agent Config", ("agent-config", "codex", "sandbox")),
+    RuleInfo("CFG008", "high", "Codex approvals are disabled", "Agent Config", ("agent-config", "codex", "approval")),
+    RuleInfo("CFG009", "medium", "Codex workspace sandbox allows network access", "Agent Config", ("agent-config", "codex", "network")),
+    RuleInfo("CFG010", "medium", "Codex writable roots include broad filesystem path", "Agent Config", ("agent-config", "codex", "filesystem")),
+    RuleInfo("CFG011", "high", "Codex permission profile grants full access", "Agent Config", ("agent-config", "codex", "permissions")),
+    RuleInfo("CFG012", "high", "Agent configuration stores literal secret-like value", "Agent Config", ("agent-config", "secrets")),
+    RuleInfo("CFG013", "medium", "Agent configuration weakens secret redaction", "Agent Config", ("agent-config", "secrets", "redaction")),
+    RuleInfo("CFG014", "medium", "Gemini automatic or persistent tool approval is enabled", "Agent Config", ("agent-config", "gemini", "approval")),
     RuleInfo("MCP000", "low", "MCP config is invalid JSON", "MCP", ("mcp", "json")),
     RuleInfo("MCP001", "high", "MCP server starts through a shell wrapper", "MCP", ("mcp", "shell")),
     RuleInfo("MCP002", "high", "MCP server uses download-and-execute bootstrap", "MCP", ("mcp", "supply-chain")),
@@ -46,4 +61,3 @@ RULES: tuple[RuleInfo, ...] = (
 )
 
 RULE_BY_ID = {rule.rule_id: rule for rule in RULES}
-

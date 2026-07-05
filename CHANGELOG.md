@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0
+
+- Added agent client config rules for Claude Code settings, Codex config, and
+  Gemini CLI settings.
+- Added detection for broad tool permissions, dangerous allowed shell commands,
+  risky hooks, disabled sandboxing, disabled approvals, network-enabled Codex
+  sandboxes, broad writable roots, full-access Codex permission profiles,
+  literal secret-like config values, secret-redaction bypasses, and Gemini
+  automatic or persistent approvals.
+- Added tests for risky and safe agent config examples.
+
 ## 0.4.0
 
 - Added `init-ci` to generate a ready-to-use GitHub Actions workflow.

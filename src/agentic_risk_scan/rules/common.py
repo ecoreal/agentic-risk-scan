@@ -51,7 +51,7 @@ def first_line_matching(text: str, pattern: str | re.Pattern[str]) -> tuple[int,
 
 def find_key_line(text: str, key: str) -> int | None:
     escaped = re.escape(key)
-    pattern = re.compile(rf'["\']?{escaped}["\']?\s*:')
+    pattern = re.compile(rf'["\']?{escaped}["\']?\s*[:=]')
     for number, line in enumerate(text.splitlines(), start=1):
         if pattern.search(line):
             return number
@@ -61,4 +61,3 @@ def find_key_line(text: str, key: str) -> int | None:
 def has_word(text: str, words: tuple[str, ...]) -> bool:
     lowered = text.lower()
     return any(word in lowered for word in words)
-

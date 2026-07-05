@@ -31,6 +31,13 @@ INSTRUCTION_PATH_MARKERS = (
     ".codex/prompts/",
 )
 
+STRUCTURED_AGENT_CONFIG_PATHS = {
+    ".claude/settings.json",
+    ".claude/settings.local.json",
+    ".codex/config.toml",
+    ".gemini/settings.json",
+}
+
 BIDI_CHARS = {
     "\u202a": "left-to-right embedding",
     "\u202b": "right-to-left embedding",
@@ -82,6 +89,8 @@ class AgentInstructionRule:
     def interested(self, rel_path: Path) -> bool:
         path = rel_path.as_posix().lower()
         name = rel_path.name.lower()
+        if path in STRUCTURED_AGENT_CONFIG_PATHS:
+            return False
         return (
             name in INSTRUCTION_BASENAMES
             or any(marker in path for marker in INSTRUCTION_PATH_MARKERS)
@@ -207,4 +216,3 @@ def dedupe(findings: list[Finding]) -> list[Finding]:
         seen.add(key)
         unique.append(finding)
     return unique
-

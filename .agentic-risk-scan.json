@@ -2,9 +2,9 @@
   "$schema": "https://raw.githubusercontent.com/ecoreal/agentic-risk-scan/main/docs/config.schema.json",
   "fail_on": "high",
   "exclude": [
-    "examples/unsafe-ai-pr-bot/**"
+    "examples/unsafe-ai-pr-bot/**",
+    "examples/unsafe-agent-configs/**"
   ],
   "disabled_rules": [],
   "suppressions": []
 }
-

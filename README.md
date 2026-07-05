@@ -77,6 +77,10 @@ agentic-risk-scan init-ci
 - Self-hosted runner use from untrusted triggers.
 - Prompt-injection phrases and hidden Unicode in `AGENTS.md`, `CLAUDE.md`,
   `.github/copilot-instructions.md`, `.cursor/rules/*`, and similar files.
+- Risky committed agent client settings in `.claude/settings.json`,
+  `.codex/config.toml`, and `.gemini/settings.json`, including broad tool
+  grants, disabled approvals, full-access permission profiles, literal
+  secret-like values, and secret-redaction bypasses.
 - MCP servers launched through shell wrappers, runtime downloads, unpinned `npx`,
   broad runtime flags, temporary paths, or inline secret-like values.
 - npm install lifecycle scripts with `curl | sh`, `eval`, inline interpreters,

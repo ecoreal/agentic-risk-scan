@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Protocol
 
 from .models import Finding, ScanConfig, ScanResult
+from .rules.agent_config import AgentConfigRule
 from .rules.agent_instructions import AgentInstructionRule
 from .rules.github_actions import GitHubActionsRule
 from .rules.mcp import MCPConfigRule
@@ -49,6 +50,7 @@ class FileRule(Protocol):
 
 RULES: tuple[FileRule, ...] = (
     GitHubActionsRule(),
+    AgentConfigRule(),
     AgentInstructionRule(),
     MCPConfigRule(),
     PackageScriptsRule(),

@@ -1,0 +1,11 @@
+{
+  "security": {
+    "toolSandboxing": true,
+    "environmentVariableRedaction": {
+      "enabled": true,
+      "allowed": [
+        "TERM"
+      ]
+    }
+  }
+}

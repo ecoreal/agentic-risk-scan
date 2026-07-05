@@ -34,6 +34,7 @@ handoff between untrusted agent input and privileged automation.
 - Dependency-free Python CLI.
 - Rules are narrow and reviewable.
 - Finds issues across GitHub Actions, agent instructions, MCP, and npm scripts.
+- Covers risky committed agent settings for Claude Code, Codex, and Gemini CLI.
 - Explains why the pattern matters and how to fix it.
 - Works in CI with SARIF or GitHub annotations.
 - Supports PR-only scans with `--changed` and `--changed-from`.
@@ -58,6 +59,18 @@ The scanner reports:
 - Prompt-injection text in `AGENTS.md`.
 - Shell-wrapped MCP server with an inline secret.
 - npm lifecycle script using download-and-execute behavior.
+
+Run the unsafe agent config example:
+
+```bash
+PYTHONPATH=src python3 -m agentic_risk_scan scan examples/unsafe-agent-configs --fail-on none
+```
+
+The scanner reports broad Claude Code permissions, risky Claude hooks, literal
+secret-like config values, Codex danger-full-access settings, disabled
+approvals, network-enabled sandboxing, broad writable roots, full-access
+permission profiles, disabled Gemini tool sandboxing, secret-redaction bypasses,
+and automatic approval settings.
 
 Then run the safe example:
 

@@ -33,6 +33,26 @@ agentic-risk-scan rules --format markdown
 | <a id="agent004"></a>`AGENT004` | high | Dangerous command embedded in agent instructions. |
 | <a id="agent005"></a>`AGENT005` | medium | Agent instruction file requests broad tool access. |
 
+## Agent Config
+
+| Rule | Default severity | Description |
+| --- | --- | --- |
+| <a id="cfg000"></a>`CFG000` | low | Agent settings file is invalid JSON. |
+| <a id="cfg001"></a>`CFG001` | medium/high | Agent configuration grants broad tool permission. |
+| <a id="cfg002"></a>`CFG002` | high | Agent configuration allows dangerous shell command. |
+| <a id="cfg003"></a>`CFG003` | medium | Agent configuration grants broad filesystem access. |
+| <a id="cfg004"></a>`CFG004` | high | Agent hook runs dangerous shell command. |
+| <a id="cfg005"></a>`CFG005` | medium | Agent hook may expose secret environment values. |
+| <a id="cfg006"></a>`CFG006` | medium | Agent tool sandboxing is disabled. |
+| <a id="cfg007"></a>`CFG007` | high | Codex sandbox is disabled. |
+| <a id="cfg008"></a>`CFG008` | high | Codex approvals are disabled. |
+| <a id="cfg009"></a>`CFG009` | medium | Codex workspace sandbox allows network access. |
+| <a id="cfg010"></a>`CFG010` | medium | Codex writable roots include broad filesystem path. |
+| <a id="cfg011"></a>`CFG011` | high | Codex permission profile grants full access. |
+| <a id="cfg012"></a>`CFG012` | high | Agent configuration stores literal secret-like value. |
+| <a id="cfg013"></a>`CFG013` | medium | Agent configuration weakens secret redaction. |
+| <a id="cfg014"></a>`CFG014` | medium | Gemini automatic or persistent tool approval is enabled. |
+
 ## MCP
 
 | Rule | Default severity | Description |

@@ -1,0 +1,15 @@
+{
+  "security": {
+    "toolSandboxing": false,
+    "environmentVariableRedaction": {
+      "enabled": false,
+      "allowed": [
+        "GITHUB_TOKEN"
+      ]
+    },
+    "enablePermanentToolApproval": true
+  },
+  "general": {
+    "defaultApprovalMode": "auto_edit"
+  }
+}

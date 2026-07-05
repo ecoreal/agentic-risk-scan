@@ -1,0 +1,13 @@
+sandbox_mode = "danger-full-access"
+approval_policy = "never"
+default_permissions = ":danger-full-access"
+
+[sandbox_workspace_write]
+network_access = true
+writable_roots = ["/", "~"]
+
+[shell_environment_policy]
+ignore_default_excludes = true
+
+[shell_environment_policy.set]
+OPENAI_API_KEY = "sk-prod-codex-fixture-1234567890"

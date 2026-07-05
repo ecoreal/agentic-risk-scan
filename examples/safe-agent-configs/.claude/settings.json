@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(src/**)",
+      "Bash(pytest tests)"
+    ]
+  }
+}
+
