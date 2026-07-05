@@ -23,6 +23,7 @@ Read the deeper context:
 - [Project brief](docs/project-brief.md)
 - [Threat model](docs/threat-model.md)
 - [Reporting guide](docs/reporting.md)
+- [Adoption guide](docs/adoption.md)
 
 ## Quick Start
 
@@ -59,6 +60,12 @@ Inventory the agentic attack surface before deciding which policies to enforce:
 
 ```bash
 agentic-risk-scan inventory . --format markdown
+```
+
+Diagnose scanner adoption and current posture:
+
+```bash
+agentic-risk-scan doctor .
 ```
 
 Generate a combined Markdown review report:
@@ -281,6 +288,22 @@ Inventory output covers GitHub Actions workflows, agent instruction files,
 Claude/Codex/Gemini settings, MCP configs, and npm package scripts. It is useful
 for rollout planning, security reviews, and before/after reports when adopting
 agent tooling across many repositories.
+
+## Doctor Mode
+
+Use `doctor` when introducing the scanner to a repository:
+
+```bash
+agentic-risk-scan doctor .
+agentic-risk-scan doctor . --format markdown --output agentic-risk-doctor.md
+agentic-risk-scan doctor . --format json
+```
+
+Doctor checks whether project config, CI, HTML report artifacts, baselines,
+current findings, and attack-surface inventory are in place. It is intended for
+onboarding and rollout reviews rather than CI failure enforcement. When a
+baseline is configured or passed with `--baseline`, doctor uses it for the
+current-findings posture check.
 
 ## Report Mode
 

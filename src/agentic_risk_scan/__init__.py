@@ -5,4 +5,4 @@ from .scanner import scan_path
 
 __all__ = ["Finding", "Location", "ScanConfig", "ScanResult", "scan_path"]
 
-__version__ = "0.9.0"
+__version__ = "0.10.0"

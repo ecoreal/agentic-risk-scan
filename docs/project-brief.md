@@ -40,6 +40,8 @@ handoff between untrusted agent input and privileged automation.
 - Supports PR-only scans with `--changed` and `--changed-from`.
 - Includes inventory mode for mapping agentic attack surfaces before enforcing
   policy.
+- Includes doctor mode for checking config, CI, report artifacts, baselines,
+  current findings, and inventory during rollout.
 - Generates combined Markdown or HTML reports for PR comments, rollout packets,
   demos, and security reviews.
 - Supports real adoption controls: baselines, suppressions, inline ignores, and
@@ -96,6 +98,12 @@ agentic-risk-scan scan . --format sarif --output agentic-risk.sarif
 
 ```bash
 agentic-risk-scan inventory . --format markdown
+```
+
+### Adoption doctor
+
+```bash
+agentic-risk-scan doctor .
 ```
 
 ### Review report

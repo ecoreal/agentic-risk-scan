@@ -8,6 +8,7 @@ from . import __version__
 from .audit_report import render_audit_report
 from .baseline import filter_baseline, load_baseline, write_baseline
 from .config import load_project_config, write_default_config
+from .doctor import diagnose_repository, render_doctor
 from .gitdiff import DEFAULT_DIFF_FILTER, GitDiffError, changed_paths_from_git
 from .inventory import collect_inventory, render_inventory
 from .models import SEVERITY_ORDER, ScanConfig
@@ -45,6 +46,10 @@ def build_parser() -> argparse.ArgumentParser:
     report = subparsers.add_parser("report", help="write a combined scan and inventory report")
     add_report_args(report)
     report.set_defaults(func=run_report)
+
+    doctor = subparsers.add_parser("doctor", help="diagnose scanner adoption and current agentic risk posture")
+    add_doctor_args(doctor)
+    doctor.set_defaults(func=run_doctor)
 
     init_config = subparsers.add_parser("init-config", help="write a starter .agentic-risk-scan.json")
     init_config.add_argument(
@@ -329,6 +334,59 @@ def add_report_args(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_doctor_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "path",
+        nargs="?",
+        default=".",
+        help="repository path to diagnose",
+    )
+    parser.add_argument(
+        "--format",
+        choices=("text", "json", "markdown"),
+        default="text",
+        help="doctor output format",
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=Path,
+        help="write doctor output to a file instead of stdout",
+    )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        help="load JSON config from this path",
+    )
+    parser.add_argument(
+        "--no-config",
+        action="store_true",
+        help="do not auto-load .agentic-risk-scan.json",
+    )
+    parser.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        help="exclude files matching this glob; can be repeated",
+    )
+    parser.add_argument(
+        "--baseline",
+        type=Path,
+        help="ignore findings whose fingerprints are present in a baseline file",
+    )
+    parser.add_argument(
+        "--include-ignored",
+        action="store_true",
+        help="diagnose ignored/generated directories such as node_modules and .git",
+    )
+    parser.add_argument(
+        "--max-file-size",
+        type=int,
+        default=1_000_000,
+        help="maximum file size in bytes to read",
+    )
+
+
 def run_scan(args: argparse.Namespace) -> int:
     path = Path(args.path or ".")
     project_config = load_project_config(path, args.config, no_config=args.no_config)
@@ -468,6 +526,36 @@ def run_report(args: argparse.Namespace) -> int:
     return 1 if any(finding.rank >= threshold for finding in scan_result.findings) else 0
 
 
+def run_doctor(args: argparse.Namespace) -> int:
+    path = Path(args.path or ".")
+    project_config = load_project_config(path, args.config, no_config=args.no_config)
+    baseline_path = args.baseline or project_config.baseline
+    config = ScanConfig(
+        root=path.resolve(),
+        include_ignored=args.include_ignored,
+        max_file_size=args.max_file_size,
+        exclude=tuple(project_config.exclude) + tuple(args.exclude),
+        disabled_rules=tuple(project_config.disabled_rules),
+    )
+    scan_result = scan_path(path, config=config)
+    scan_result.findings = project_config.filter_findings(scan_result.findings)
+    if baseline_path:
+        scan_result.findings = filter_baseline(scan_result.findings, load_baseline(baseline_path))
+    inventory_result = collect_inventory(path, config=config)
+    result = diagnose_repository(
+        path.resolve(),
+        project_config=project_config,
+        scan_result=scan_result,
+        inventory_result=inventory_result,
+    )
+    output = render_doctor(result, fmt=args.format)
+    if args.output:
+        args.output.write_text(output, encoding="utf-8")
+    else:
+        sys.stdout.write(output)
+    return 0
+
+
 def run_rules(args: argparse.Namespace) -> int:
     if args.format == "json":
         import json
@@ -493,7 +581,7 @@ def run_rules(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
-    commands = {"scan", "rules", "inventory", "report", "init-config", "init-ci"}
+    commands = {"scan", "rules", "inventory", "report", "doctor", "init-config", "init-ci"}
     if not argv or (argv[0] not in commands and not argv[0].startswith("-")):
         argv = ["scan", *argv]
     parser = build_parser()

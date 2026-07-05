@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.10.0
+
+- Added `agentic-risk-scan doctor` to diagnose scanner adoption and current
+  agentic risk posture.
+- Doctor output covers project config, GitHub Actions integration, HTML report
+  artifacts, baselines, current findings, and attack-surface inventory.
+- Added text, JSON, and Markdown doctor output plus tests for adoption checks,
+  report artifact detection, findings posture, and output files.
+- Added an adoption guide for rolling the scanner into existing repositories.
+
 ## 0.9.0
 
 - Added `agentic-risk-scan init-ci --report-artifact` to generate GitHub

@@ -327,6 +327,61 @@ jobs:
             self.assertIn("AGENT005", stdout)
             self.assertIn("Attack Surface Inventory", stdout)
 
+    def test_doctor_json_reports_adoption_checks(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workflow = root / ".github" / "workflows" / "agentic-risk.yml"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text(
+                """
+name: agentic-risk
+on: [pull_request]
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ecoreal/agentic-risk-scan@v0
+        with:
+          command: report
+          format: html
+          output: agentic-risk-report.html
+      - uses: actions/upload-artifact@v4
+        with:
+          path: agentic-risk-report.html
+""",
+                encoding="utf-8",
+            )
+            (root / ".agentic-risk-scan.json").write_text(
+                json.dumps({"fail_on": "high", "exclude": []}),
+                encoding="utf-8",
+            )
+
+            code, stdout, _ = capture_cli(["doctor", str(root), "--format", "json"])
+
+            self.assertEqual(0, code)
+            payload = json.loads(stdout)
+            self.assertEqual("reporting", payload["maturity"])
+            checks = {check["name"]: check for check in payload["checks"]}
+            self.assertEqual("pass", checks["project-config"]["status"])
+            self.assertEqual("pass", checks["ci-workflow"]["status"])
+            self.assertEqual("pass", checks["report-artifact"]["status"])
+
+    def test_doctor_markdown_reports_findings_and_output_file(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            instructions = root / "AGENTS.md"
+            output = root / "doctor.md"
+            instructions.write_text("allowed-tools: *\n", encoding="utf-8")
+
+            code = run_cli(["doctor", str(root), "--format", "markdown", "--output", str(output), "--no-config"])
+
+            self.assertEqual(0, code)
+            text = output.read_text(encoding="utf-8")
+            self.assertIn("# Agentic Risk Doctor", text)
+            self.assertIn("current-findings", text)
+            self.assertIn("lower-severity", text)
+            self.assertIn("agent-instructions=1", text)
+
     def test_composite_action_supports_report_command(self) -> None:
         action = Path(__file__).resolve().parents[1] / "action.yml"
         text = action.read_text(encoding="utf-8")
