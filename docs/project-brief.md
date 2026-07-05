@@ -38,6 +38,8 @@ handoff between untrusted agent input and privileged automation.
 - Explains why the pattern matters and how to fix it.
 - Works in CI with SARIF or GitHub annotations.
 - Supports PR-only scans with `--changed` and `--changed-from`.
+- Includes inventory mode for mapping agentic attack surfaces before enforcing
+  policy.
 - Supports real adoption controls: baselines, suppressions, inline ignores, and
   severity overrides.
 
@@ -86,6 +88,12 @@ It returns no findings.
 
 ```bash
 agentic-risk-scan scan . --format sarif --output agentic-risk.sarif
+```
+
+### Attack surface inventory
+
+```bash
+agentic-risk-scan inventory . --format markdown
 ```
 
 ### Pull request check

@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from .agent_config import is_agent_config_path
 from .common import make_finding
 from ..models import Finding
 
@@ -30,13 +31,6 @@ INSTRUCTION_PATH_MARKERS = (
     ".codex/skills/",
     ".codex/prompts/",
 )
-
-STRUCTURED_AGENT_CONFIG_PATHS = {
-    ".claude/settings.json",
-    ".claude/settings.local.json",
-    ".codex/config.toml",
-    ".gemini/settings.json",
-}
 
 BIDI_CHARS = {
     "\u202a": "left-to-right embedding",
@@ -89,7 +83,7 @@ class AgentInstructionRule:
     def interested(self, rel_path: Path) -> bool:
         path = rel_path.as_posix().lower()
         name = rel_path.name.lower()
-        if path in STRUCTURED_AGENT_CONFIG_PATHS:
+        if is_agent_config_path(rel_path):
             return False
         return (
             name in INSTRUCTION_BASENAMES

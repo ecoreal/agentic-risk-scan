@@ -50,6 +50,17 @@ class AgentConfigRuleTests(unittest.TestCase):
             self.assertIn("CFG012", rule_ids)
             self.assertFalse(any(rule_id.startswith("AGENT") for rule_id in rule_ids))
 
+    def test_detects_nested_agent_config_without_instruction_overlap(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            settings = root / "fixtures" / ".claude" / "settings.json"
+            settings.parent.mkdir(parents=True)
+            settings.write_text('{"permissions": {"allow": ["Bash(*)"]}}', encoding="utf-8")
+
+            result = scan_path(root)
+            rule_ids = {finding.rule_id for finding in result.findings}
+            self.assertEqual({"CFG001"}, rule_ids)
+
     def test_detects_codex_dangerous_defaults(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

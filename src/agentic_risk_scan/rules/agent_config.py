@@ -22,6 +22,8 @@ CODEX_CONFIG = {
     ".codex/config.toml",
 }
 
+AGENT_CONFIG_PATHS = CLAUDE_SETTINGS | GEMINI_SETTINGS | CODEX_CONFIG
+
 BROAD_TOOL_GRANTS = {
     "*",
     "bash",
@@ -59,18 +61,25 @@ class AgentConfigRule:
     rule_group = "agent-config"
 
     def interested(self, rel_path: Path) -> bool:
-        path = rel_path.as_posix().lower()
-        return path in CLAUDE_SETTINGS or path in GEMINI_SETTINGS or path in CODEX_CONFIG
+        return is_agent_config_path(rel_path)
 
     def scan(self, rel_path: Path, text: str) -> list[Finding]:
         path = rel_path.as_posix().lower()
-        if path in CODEX_CONFIG:
+        if path_matches(path, CODEX_CONFIG):
             return scan_codex_config(rel_path, text)
-        if path in CLAUDE_SETTINGS:
+        if path_matches(path, CLAUDE_SETTINGS):
             return scan_json_agent_settings(rel_path, text, ecosystem="Claude Code")
-        if path in GEMINI_SETTINGS:
+        if path_matches(path, GEMINI_SETTINGS):
             return scan_json_agent_settings(rel_path, text, ecosystem="Gemini CLI")
         return []
+
+
+def is_agent_config_path(rel_path: Path) -> bool:
+    return path_matches(rel_path.as_posix().lower(), AGENT_CONFIG_PATHS)
+
+
+def path_matches(path: str, candidates: set[str]) -> bool:
+    return path in candidates or any(path.endswith(f"/{candidate}") for candidate in candidates)
 
 
 def scan_json_agent_settings(rel_path: Path, text: str, *, ecosystem: str) -> list[Finding]:

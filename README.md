@@ -54,6 +54,12 @@ Scan only files changed in a pull request:
 agentic-risk-scan scan . --changed-from origin/main --format github
 ```
 
+Inventory the agentic attack surface before deciding which policies to enforce:
+
+```bash
+agentic-risk-scan inventory . --format markdown
+```
+
 Create a starter config:
 
 ```bash
@@ -241,6 +247,22 @@ branch before using `--changed-from origin/main`.
 
 See [docs/rules.md](docs/rules.md) for the rule reference.
 See [docs/threat-model.md](docs/threat-model.md) for the scanner threat model.
+
+## Inventory Mode
+
+Use `inventory` when you want a map of the agent-facing files in a repository,
+not just a pass/fail security check:
+
+```bash
+agentic-risk-scan inventory . --format text
+agentic-risk-scan inventory . --format json
+agentic-risk-scan inventory . --format markdown
+```
+
+Inventory output covers GitHub Actions workflows, agent instruction files,
+Claude/Codex/Gemini settings, MCP configs, and npm package scripts. It is useful
+for rollout planning, security reviews, and before/after reports when adopting
+agent tooling across many repositories.
 
 ## Design Principles
 

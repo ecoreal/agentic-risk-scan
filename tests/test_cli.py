@@ -210,6 +210,48 @@ jobs:
         self.assertIn("## GitHub Actions", stdout)
         self.assertIn("| `GHA001` | critical |", stdout)
 
+    def test_inventory_json_lists_agentic_surfaces(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workflow = root / ".github" / "workflows" / "agent.yml"
+            settings = root / "fixtures" / ".claude" / "settings.json"
+            instructions = root / "AGENTS.md"
+            mcp = root / ".mcp.json"
+            package = root / "package.json"
+            workflow.parent.mkdir(parents=True)
+            settings.parent.mkdir(parents=True)
+            workflow.write_text(
+                """
+on: [issue_comment]
+permissions: write-all
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo agent
+""",
+                encoding="utf-8",
+            )
+            settings.write_text('{"permissions": {"allow": ["Read(src/**)"]}}', encoding="utf-8")
+            instructions.write_text("allowed-tools: Read\n", encoding="utf-8")
+            mcp.write_text(
+                json.dumps({"mcpServers": {"local": {"command": "node", "args": ["server.js"]}}}),
+                encoding="utf-8",
+            )
+            package.write_text(json.dumps({"scripts": {"postinstall": "node setup.js"}}), encoding="utf-8")
+
+            code, stdout, _ = capture_cli(["inventory", str(root), "--format", "json"])
+
+            self.assertEqual(0, code)
+            payload = json.loads(stdout)
+            categories = {item["category"] for item in payload["items"]}
+            self.assertEqual(
+                {"agent-config", "agent-instructions", "github-actions", "mcp", "package-scripts"},
+                categories,
+            )
+            config_items = [item for item in payload["items"] if item["category"] == "agent-config"]
+            self.assertEqual("fixtures/.claude/settings.json", config_items[0]["path"])
+
     def test_changed_only_scans_selected_paths(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

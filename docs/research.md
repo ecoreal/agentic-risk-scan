@@ -81,6 +81,9 @@ before a team has a mature AI security program.
 - **Zero-friction install:** no runtime dependency chain for the scanner itself.
 - **PR-native signal:** full scans for audits, changed-file scans for pull
   requests.
+- **Attack-surface mapping:** inventory mode for teams that need to find where
+  agent workflows, settings, instructions, MCP configs, and package scripts
+  exist before they enforce policy.
 - **Security-review language:** every finding must explain the untrusted input,
   the privilege boundary, and the remediation.
 - **Governance support:** baselines, suppressions, inline ignores, severity

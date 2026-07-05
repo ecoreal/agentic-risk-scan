@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0
+
+- Added `agentic-risk-scan inventory` to enumerate repository agentic attack
+  surfaces even when there are no findings.
+- Added text, JSON, and Markdown inventory output for GitHub Actions workflows,
+  agent instruction files, agent client configs, MCP configs, and package
+  scripts.
+- Improved nested agent config path handling so `.claude/settings.json`,
+  `.codex/config.toml`, and `.gemini/settings.json` are treated as structured
+  config files even inside fixture or example directories.
+
 ## 0.5.0
 
 - Added agent client config rules for Claude Code settings, Codex config, and
