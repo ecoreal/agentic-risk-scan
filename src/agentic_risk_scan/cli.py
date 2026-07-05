@@ -7,6 +7,7 @@ from pathlib import Path
 from . import __version__
 from .baseline import filter_baseline, load_baseline, write_baseline
 from .config import load_project_config, write_default_config
+from .gitdiff import DEFAULT_DIFF_FILTER, GitDiffError, changed_paths_from_git
 from .models import SEVERITY_ORDER, ScanConfig
 from .registry import RULES
 from .reporters import render
@@ -94,6 +95,29 @@ def add_scan_args(parser: argparse.ArgumentParser) -> None:
         help="disable a rule ID for this run; can be repeated",
     )
     parser.add_argument(
+        "--changed",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help="only scan this changed file or directory; can be repeated",
+    )
+    parser.add_argument(
+        "--changed-from",
+        metavar="REF",
+        help="only scan files changed from this git ref to --changed-to",
+    )
+    parser.add_argument(
+        "--changed-to",
+        metavar="REF",
+        default="HEAD",
+        help="git ref used with --changed-from; defaults to HEAD",
+    )
+    parser.add_argument(
+        "--diff-filter",
+        default=DEFAULT_DIFF_FILTER,
+        help="git diff-filter used with --changed-from; defaults to ACMR",
+    )
+    parser.add_argument(
         "--baseline",
         type=Path,
         help="ignore findings whose fingerprints are present in a baseline file",
@@ -125,6 +149,20 @@ def run_scan(args: argparse.Namespace) -> int:
     path = Path(args.path or ".")
     project_config = load_project_config(path, args.config, no_config=args.no_config)
     baseline_path = args.baseline or project_config.baseline
+    changed_paths = list(args.changed)
+    if args.changed_from:
+        try:
+            changed_paths.extend(
+                changed_paths_from_git(
+                    path.resolve(),
+                    args.changed_from,
+                    head=args.changed_to,
+                    diff_filter=args.diff_filter,
+                )
+            )
+        except GitDiffError as exc:
+            sys.stderr.write(f"failed to compute changed files: {exc}\n")
+            return 2
     config = ScanConfig(
         root=path.resolve(),
         include_ignored=args.include_ignored,
@@ -132,6 +170,7 @@ def run_scan(args: argparse.Namespace) -> int:
         exclude=tuple(project_config.exclude) + tuple(args.exclude),
         disabled_rules=tuple(project_config.disabled_rules) + tuple(args.disable_rule),
         inline_ignores=not args.no_inline_ignores,
+        changed_paths=tuple(changed_paths),
     )
     result = scan_path(path, config=config)
     result.findings = project_config.filter_findings(result.findings)

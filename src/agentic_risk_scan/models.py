@@ -91,6 +91,7 @@ class ScanConfig:
     exclude: tuple[str, ...] = ()
     disabled_rules: tuple[str, ...] = ()
     inline_ignores: bool = True
+    changed_paths: tuple[str, ...] = ()
 
 
 @dataclass

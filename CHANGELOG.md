@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+- Added pull-request friendly changed-file scanning with `--changed`.
+- Added git-based diff scanning with `--changed-from`, `--changed-to`, and
+  `--diff-filter`.
+- Added composite Action inputs for changed-file scans.
+- Added research notes and project brief docs.
+
 ## 0.2.0
 
 - Added centralized rule metadata registry.

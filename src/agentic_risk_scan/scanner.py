@@ -61,7 +61,12 @@ def scan_path(path: str | Path, *, config: ScanConfig | None = None) -> ScanResu
         config = ScanConfig(root=root)
     result = ScanResult(root=root)
 
-    for file_path in iter_files(root, include_ignored=config.include_ignored):
+    files = (
+        iter_changed_files(root, config.changed_paths, include_ignored=config.include_ignored)
+        if config.changed_paths
+        else iter_files(root, include_ignored=config.include_ignored)
+    )
+    for file_path in files:
         rel_path = Path(file_path.name) if root.is_file() else file_path.relative_to(root)
         if path_excluded(rel_path, config.exclude):
             continue
@@ -106,6 +111,58 @@ def iter_files(root: Path, *, include_ignored: bool = False) -> list[Path]:
         for filename in filenames:
             files.append(current_path / filename)
     return files
+
+
+def iter_changed_files(
+    root: Path,
+    changed_paths: tuple[str, ...],
+    *,
+    include_ignored: bool = False,
+) -> list[Path]:
+    files: list[Path] = []
+    seen: set[Path] = set()
+    scan_root = root.parent if root.is_file() else root
+
+    for raw_path in changed_paths:
+        if not raw_path:
+            continue
+        candidate = resolve_changed_path(scan_root, raw_path)
+        if candidate is None:
+            continue
+
+        if root.is_file():
+            if candidate == root and candidate not in seen:
+                files.append(candidate)
+                seen.add(candidate)
+            continue
+
+        if candidate.is_dir():
+            nested_files = iter_files(candidate, include_ignored=include_ignored)
+        elif candidate.is_file():
+            nested_files = [candidate]
+        else:
+            continue
+
+        for nested_file in nested_files:
+            try:
+                nested_file.relative_to(scan_root)
+            except ValueError:
+                continue
+            if nested_file not in seen:
+                files.append(nested_file)
+                seen.add(nested_file)
+
+    return files
+
+
+def resolve_changed_path(root: Path, raw_path: str) -> Path | None:
+    path = Path(raw_path)
+    candidate = path.resolve() if path.is_absolute() else (root / path).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError:
+        return None
+    return candidate
 
 
 def path_excluded(rel_path: Path, patterns: tuple[str, ...]) -> bool:

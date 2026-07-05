@@ -17,6 +17,12 @@ install scripts.
 It is dependency-free, works on Python 3.10+, and is designed for CI, code review,
 and quick local audits.
 
+Read the deeper context:
+
+- [Research notes](docs/research.md)
+- [Project brief](docs/project-brief.md)
+- [Threat model](docs/threat-model.md)
+
 ## Quick Start
 
 ```bash
@@ -40,6 +46,12 @@ Emit GitHub workflow annotations:
 
 ```bash
 agentic-risk-scan scan . --format github --fail-on high
+```
+
+Scan only files changed in a pull request:
+
+```bash
+agentic-risk-scan scan . --changed-from origin/main --format github
 ```
 
 Create a starter config:
@@ -117,11 +129,14 @@ jobs:
 Or use this repository as a composite action:
 
 ```yaml
+- uses: actions/checkout@v4
+  with:
+    fetch-depth: 0
 - uses: ecoreal/agentic-risk-scan@v0
   with:
-    format: sarif
-    output: agentic-risk.sarif
+    format: github
     fail_on: high
+    changed_from: origin/main
 ```
 
 ## Configuration
@@ -153,6 +168,7 @@ CLI flags override or extend config values:
 ```bash
 agentic-risk-scan scan . --config security/agentic-risk.json
 agentic-risk-scan scan . --exclude "examples/**" --disable-rule PKG004
+agentic-risk-scan scan . --changed AGENTS.md --changed .github/workflows/agent.yml
 ```
 
 Inline ignores are supported for reviewed exceptions:
@@ -189,6 +205,23 @@ agentic-risk-scan scan . --format markdown
 agentic-risk-scan scan . --format sarif
 agentic-risk-scan scan . --format github
 ```
+
+## Pull Request Mode
+
+Full-repository scans are useful for scheduled audits. Pull request checks often
+need a tighter signal. Use `--changed` for explicit paths, or `--changed-from`
+to let the scanner ask git for changed files:
+
+```bash
+agentic-risk-scan scan . --changed AGENTS.md --fail-on medium
+agentic-risk-scan scan . --changed-from origin/main --changed-to HEAD --format github
+```
+
+Deleted files are ignored by default. The default git diff filter is `ACMR`
+which covers added, copied, modified, and renamed files.
+
+In GitHub Actions, set `actions/checkout` to `fetch-depth: 0` or fetch the base
+branch before using `--changed-from origin/main`.
 
 See [docs/rules.md](docs/rules.md) for the rule reference.
 See [docs/threat-model.md](docs/threat-model.md) for the scanner threat model.

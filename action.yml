@@ -27,6 +27,18 @@ inputs:
     description: Optional JSON config file.
     required: false
     default: ""
+  changed_from:
+    description: Optional git ref; when set, only files changed from this ref are scanned.
+    required: false
+    default: ""
+  changed_to:
+    description: Git ref used with changed_from.
+    required: false
+    default: "HEAD"
+  diff_filter:
+    description: Git diff-filter used with changed_from.
+    required: false
+    default: "ACMR"
 
 runs:
   using: composite
@@ -44,5 +56,8 @@ runs:
         fi
         if [ -n "${{ inputs.config }}" ]; then
           args+=(--config "${{ inputs.config }}")
+        fi
+        if [ -n "${{ inputs.changed_from }}" ]; then
+          args+=(--changed-from "${{ inputs.changed_from }}" --changed-to "${{ inputs.changed_to }}" --diff-filter "${{ inputs.diff_filter }}")
         fi
         agentic-risk-scan "${args[@]}"
