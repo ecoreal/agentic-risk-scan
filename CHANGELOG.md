@@ -9,6 +9,9 @@
   setup and the tag-and-release flow.
 - Expanded the README example with real multi-rule scan output (GitHub Actions
   and MCP findings) and a clean safe-example contrast.
+- Added a README "Why This vs a Generic SAST Tool" section mapping the agentic
+  attack surface (PR/comment injection, MCP download-and-execute, hidden-Unicode
+  instructions, over-privileged agent config) to concrete rule IDs.
 
 ## 0.10.0
 
