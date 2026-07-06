@@ -12,6 +12,9 @@
 - Added a README "Why This vs a Generic SAST Tool" section mapping the agentic
   attack surface (PR/comment injection, MCP download-and-execute, hidden-Unicode
   instructions, over-privileged agent config) to concrete rule IDs.
+- Added direct tests for 13 previously-untested rules (GHA004-GHA007, MCP000,
+  MCP003-MCP006, MCP008, PKG002, CFG000, AGENT002), bringing every rule under
+  direct test coverage. Test count rose from 34 to 47.
 
 ## 0.10.0
 
