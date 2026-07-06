@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Added a PyPI publish workflow using OIDC Trusted Publishing, triggered on
+  published GitHub releases, with separate build and publish jobs and a
+  protected `pypi` environment for the `id-token: write` step.
+- Added `docs/releasing.md` documenting the one-time PyPI Trusted Publishing
+  setup and the tag-and-release flow.
+- Expanded the README example with real multi-rule scan output (GitHub Actions
+  and MCP findings) and a clean safe-example contrast.
+
 ## 0.10.0
 
 - Added `agentic-risk-scan doctor` to diagnose scanner adoption and current
