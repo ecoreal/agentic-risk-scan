@@ -150,6 +150,41 @@ and the fix. The safe example scores `0/100`:
 PYTHONPATH=src python3 -m agentic_risk_scan scan examples/safe-agent-workflow --fail-on high
 ```
 
+## Why This vs a Generic SAST Tool
+
+Traditional SAST looks for vulnerable application code: injection sinks, unsafe
+deserialization, weak crypto. `agentic-risk-scan` looks at a different layer —
+the repository configuration that decides how much damage an AI agent or
+untrusted contributor input can do before any application code runs. These are
+threats that a code-focused scanner does not model.
+
+- **PR / comment injection into privileged workflows.** A `pull_request_target`
+  workflow that checks out fork code, or a step that interpolates
+  `github.event.*` text into a shell, hands untrusted input a write-capable
+  token. This scanner flags the boundary directly (`GHA001`, `GHA003`), instead
+  of treating the workflow as inert YAML.
+- **MCP download-and-execute bootstrap.** An MCP server whose command pipes a
+  remote script into an interpreter (`curl … | sh`) runs attacker-controlled
+  code on a developer workstation at agent-startup time. `MCP002` catches this
+  supply-chain pattern that lives in `.mcp.json`, not in any source file a SAST
+  tool parses.
+- **Hidden-Unicode and prompt-injection instructions.** Bidirectional control
+  characters (`AGENT001`), zero-width characters (`AGENT002`), and
+  prompt-injection phrases (`AGENT003`) inside `AGENTS.md`, `CLAUDE.md`, or
+  `.cursor/rules/*` steer an agent's behavior while looking benign in review.
+  Generic linters treat these files as prose and skip them entirely.
+- **Over-privileged agent client config.** Disabled sandboxes (`CFG006`,
+  `CFG007`), disabled approvals (`CFG008`), full-access permission profiles
+  (`CFG011`), and inline secret-like values (`CFG012`) in committed
+  `.claude` / `.codex` / `.gemini` settings widen the blast radius before the
+  agent does anything. This is configuration risk, not code risk.
+
+The scope is intentionally the agentic attack surface, not general application
+security. Run both: a SAST tool for your application code, and this for the
+agent and workflow configuration that a SAST tool does not read. See
+[docs/threat-model.md](docs/threat-model.md) for the full asset and
+untrusted-input model.
+
 ## GitHub Actions
 
 Generate this workflow automatically:
