@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+- Added a PyPI publish workflow using OIDC Trusted Publishing, triggered on
+  published GitHub releases, with separate build and publish jobs and a
+  protected `pypi` environment for the `id-token: write` step.
+- Added `docs/releasing.md` documenting the one-time PyPI Trusted Publishing
+  setup and the tag-and-release flow.
+- Expanded the README example with real multi-rule scan output (GitHub Actions
+  and MCP findings) and a clean safe-example contrast.
+- Added a README "Why This vs a Generic SAST Tool" section mapping the agentic
+  attack surface (PR/comment injection, MCP download-and-execute, hidden-Unicode
+  instructions, over-privileged agent config) to concrete rule IDs.
+- Added direct tests for 13 previously-untested rules (GHA004-GHA007, MCP000,
+  MCP003-MCP006, MCP008, PKG002, CFG000, AGENT002), bringing every rule under
+  direct test coverage. Test count rose from 34 to 47.
+- Added regression tests that pin the shipped `examples/` fixtures: both safe
+  examples must stay at 0 findings, and the unsafe example must keep the exact
+  severity counts quoted in the README, guarding against false-positive drift
+  and README/scanner divergence. Test count rose from 47 to 51.
+
 ## 0.10.0
 
 - Added `agentic-risk-scan doctor` to diagnose scanner adoption and current
