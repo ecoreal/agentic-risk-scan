@@ -15,6 +15,10 @@
 - Added direct tests for 13 previously-untested rules (GHA004-GHA007, MCP000,
   MCP003-MCP006, MCP008, PKG002, CFG000, AGENT002), bringing every rule under
   direct test coverage. Test count rose from 34 to 47.
+- Added regression tests that pin the shipped `examples/` fixtures: both safe
+  examples must stay at 0 findings, and the unsafe example must keep the exact
+  severity counts quoted in the README, guarding against false-positive drift
+  and README/scanner divergence. Test count rose from 47 to 51.
 
 ## 0.10.0
 
