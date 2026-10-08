@@ -126,6 +126,19 @@ jobs:
             self.assertEqual(0, excluded)
             self.assertEqual(0, disabled)
 
+    def test_invalid_config_is_reported_without_traceback(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = root / ".agentic-risk-scan.json"
+            config.write_text("{not valid json", encoding="utf-8")
+
+            code, stdout, stderr = capture_cli(["scan", str(root)])
+
+            self.assertEqual(2, code)
+            self.assertEqual("", stdout)
+            self.assertIn("error:", stderr)
+            self.assertNotIn("Traceback", stderr)
+
     def test_init_config_refuses_overwrite(self) -> None:
         with TemporaryDirectory() as tmp:
             config = Path(tmp) / ".agentic-risk-scan.json"

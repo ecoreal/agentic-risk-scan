@@ -586,7 +586,13 @@ def main(argv: list[str] | None = None) -> int:
         argv = ["scan", *argv]
     parser = build_parser()
     args = parser.parse_args(argv)
-    return int(args.func(args))
+    try:
+        return int(args.func(args))
+    except (OSError, ValueError) as exc:
+        # Configuration, input, and output failures are expected CLI errors.
+        # Keep them concise and actionable instead of exposing a traceback.
+        sys.stderr.write(f"error: {exc}\n")
+        return 2
 
 
 if __name__ == "__main__":
