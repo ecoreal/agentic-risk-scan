@@ -204,10 +204,12 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   scan:
+    permissions:
+      contents: read
+      security-events: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -61,7 +61,6 @@ def workflow_header(kind: str) -> str:
 {trigger}
 permissions:
   contents: read
-  security-events: write
 
 """
 
@@ -91,6 +90,9 @@ def full_job(fail_on: str, *, report_artifact: bool = False) -> str:
     report_steps = full_report_steps() if report_artifact else ""
     return f"""  full-agentic-risk:
     if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      security-events: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

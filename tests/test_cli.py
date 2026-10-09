@@ -170,6 +170,8 @@ jobs:
             self.assertIn('refs/remotes/origin/${{ github.base_ref }}" --depth=1', text)
             self.assertIn("changed_from: origin/${{ github.base_ref }}", text)
             self.assertIn("format: sarif", text)
+            self.assertIn("security-events: write", text)
+            self.assertNotIn("permissions:\n  contents: read\n  security-events: write", text)
             self.assertNotIn("upload-artifact", text)
 
     def test_init_ci_can_upload_html_report_artifacts(self) -> None:
