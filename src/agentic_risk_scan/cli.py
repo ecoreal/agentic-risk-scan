@@ -18,6 +18,13 @@ from .scanner import scan_path
 from .workflow import DEFAULT_WORKFLOW_PATH, write_workflow
 
 
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("must be at least 1")
+    return parsed
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="agentic-risk-scan",
@@ -187,7 +194,7 @@ def add_scan_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--max-file-size",
-        type=int,
+        type=positive_int,
         default=1_000_000,
         help="maximum file size in bytes to read",
     )
@@ -235,7 +242,7 @@ def add_inventory_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--max-file-size",
-        type=int,
+        type=positive_int,
         default=1_000_000,
         help="maximum file size in bytes to read",
     )
@@ -328,7 +335,7 @@ def add_report_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--max-file-size",
-        type=int,
+        type=positive_int,
         default=1_000_000,
         help="maximum file size in bytes to read",
     )
@@ -381,7 +388,7 @@ def add_doctor_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--max-file-size",
-        type=int,
+        type=positive_int,
         default=1_000_000,
         help="maximum file size in bytes to read",
     )

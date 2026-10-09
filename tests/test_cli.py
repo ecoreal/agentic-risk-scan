@@ -126,6 +126,11 @@ jobs:
             self.assertEqual(0, excluded)
             self.assertEqual(0, disabled)
 
+    def test_rejects_non_positive_max_file_size(self) -> None:
+        with self.assertRaises(SystemExit) as raised:
+            main(["scan", ".", "--max-file-size", "0"])
+        self.assertEqual(2, raised.exception.code)
+
     def test_invalid_config_is_reported_without_traceback(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
