@@ -141,9 +141,11 @@ def iter_changed_files(
                 seen.add(candidate)
             continue
 
+        if candidate.is_symlink():
+            continue
         if candidate.is_dir():
             nested_files = iter_files(candidate, include_ignored=include_ignored)
-        elif candidate.is_file() and not candidate.is_symlink():
+        elif candidate.is_file():
             nested_files = [candidate]
         else:
             continue
