@@ -111,7 +111,10 @@ def iter_files(root: Path, *, include_ignored: bool = False) -> list[Path]:
             ]
         current_path = Path(current)
         for filename in filenames:
-            files.append(current_path / filename)
+            file_path = current_path / filename
+            if file_path.is_symlink():
+                continue
+            files.append(file_path)
     return files
 
 
@@ -140,7 +143,7 @@ def iter_changed_files(
 
         if candidate.is_dir():
             nested_files = iter_files(candidate, include_ignored=include_ignored)
-        elif candidate.is_file():
+        elif candidate.is_file() and not candidate.is_symlink():
             nested_files = [candidate]
         else:
             continue

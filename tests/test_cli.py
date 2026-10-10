@@ -7,6 +7,7 @@ import unittest
 import io
 
 from agentic_risk_scan.cli import main
+from agentic_risk_scan.scanner import scan_path
 
 
 def run_cli(args: list[str]) -> int:
@@ -25,6 +26,23 @@ def capture_cli(args: list[str]) -> tuple[int, str, str]:
 
 
 class CLITests(unittest.TestCase):
+    def test_scan_does_not_follow_file_symlinks_outside_root(self) -> None:
+        with TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            root = base / "repo"
+            root.mkdir()
+            outside = base / "outside.md"
+            outside.write_text("allowed-tools: *\n", encoding="utf-8")
+            try:
+                (root / "AGENTS.md").symlink_to(outside)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks are not supported")
+
+            result = scan_path(root)
+
+            self.assertEqual(result.findings, [])
+            self.assertEqual(result.scanned_files, 0)
+
     def test_json_output_file_and_fail_on_none(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
