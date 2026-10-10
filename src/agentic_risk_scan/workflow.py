@@ -3,6 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 
+CHECKOUT_ACTION = "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2"
+UPLOAD_ARTIFACT_ACTION = "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2"
+
+
 DEFAULT_WORKFLOW_PATH = Path(".github/workflows/agentic-risk-scan.yml")
 
 
@@ -71,7 +75,7 @@ def pr_job(fail_on: str, *, report_artifact: bool = False) -> str:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: {CHECKOUT_ACTION}
         with:
           fetch-depth: 0
       - name: Fetch base branch
@@ -95,7 +99,7 @@ def full_job(fail_on: str, *, report_artifact: bool = False) -> str:
       security-events: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: {CHECKOUT_ACTION}
       - uses: ecoreal/agentic-risk-scan@v0
         with:
           format: sarif
@@ -110,7 +114,7 @@ def full_job(fail_on: str, *, report_artifact: bool = False) -> str:
 
 
 def pr_report_steps() -> str:
-    return """      - uses: ecoreal/agentic-risk-scan@v0
+    return f"""      - uses: ecoreal/agentic-risk-scan@v0
         if: always()
         with:
           command: report
@@ -118,7 +122,7 @@ def pr_report_steps() -> str:
           output: agentic-risk-pr-report.html
           fail_on: none
           changed_from: origin/${{ github.base_ref }}
-      - uses: actions/upload-artifact@v4
+      - uses: {UPLOAD_ARTIFACT_ACTION}
         if: always()
         with:
           name: agentic-risk-pr-report
@@ -127,14 +131,14 @@ def pr_report_steps() -> str:
 
 
 def full_report_steps() -> str:
-    return """      - uses: ecoreal/agentic-risk-scan@v0
+    return f"""      - uses: ecoreal/agentic-risk-scan@v0
         if: always()
         with:
           command: report
           format: html
           output: agentic-risk-full-report.html
           fail_on: none
-      - uses: actions/upload-artifact@v4
+      - uses: {UPLOAD_ARTIFACT_ACTION}
         if: always()
         with:
           name: agentic-risk-full-report

@@ -240,7 +240,7 @@ jobs:
             self.assertIn("format: html", text)
             self.assertIn("agentic-risk-pr-report.html", text)
             self.assertIn("agentic-risk-full-report.html", text)
-            self.assertIn("actions/upload-artifact@v4", text)
+            self.assertIn("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02", text)
             self.assertIn("if: always()", text)
 
     def test_init_ci_refuses_overwrite_without_force(self) -> None:
