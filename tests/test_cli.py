@@ -62,6 +62,23 @@ class CLITests(unittest.TestCase):
             self.assertEqual(result.findings, [])
             self.assertEqual(result.scanned_files, 0)
 
+    def test_changed_directory_symlink_inside_root_is_not_followed(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp) / "repo"
+            root.mkdir()
+            target = root / "tracked-target"
+            target.mkdir()
+            (target / "AGENTS.md").write_text("allowed-tools: *\n", encoding="utf-8")
+            try:
+                (root / "linked").symlink_to(target, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("directory symlinks are not supported")
+
+            result = scan_path(root, config=ScanConfig(root=root, changed_paths=("linked",)))
+
+            self.assertEqual(result.findings, [])
+            self.assertEqual(result.scanned_files, 0)
+
     def test_json_output_file_and_fail_on_none(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

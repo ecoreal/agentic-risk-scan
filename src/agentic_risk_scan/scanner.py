@@ -164,7 +164,25 @@ def iter_changed_files(
 
 def resolve_changed_path(root: Path, raw_path: str) -> Path | None:
     path = Path(raw_path)
-    candidate = path.resolve() if path.is_absolute() else (root / path).resolve()
+    candidate = path if path.is_absolute() else root / path
+
+    # Check the lexical path before resolving it.  Resolving first turns a
+    # symlink into its target, which makes a changed symlink pointing back
+    # inside the repository indistinguishable from a regular path.
+    try:
+        relative = candidate.relative_to(root)
+    except ValueError:
+        return None
+
+    current = root
+    for part in relative.parts:
+        if part in {"", "."}:
+            continue
+        current /= part
+        if current.is_symlink():
+            return None
+
+    candidate = candidate.resolve()
     try:
         candidate.relative_to(root)
     except ValueError:
