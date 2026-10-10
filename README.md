@@ -127,7 +127,7 @@ scanned files: 4, skipped files: 0
 [CRITICAL] GHA001 pull_request_target checks out untrusted PR code
   at: .github/workflows/unsafe.yml:16
   why: This workflow runs with target-repository privileges and checks out code from the pull request head.
-  evidence: - uses: actions/checkout@v4
+  evidence: - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
   fix: Use pull_request with read-only permissions, or split analysis and write-back into separate workflows connected by reviewed artifacts.
 
 [HIGH] GHA003 Untrusted GitHub event data is interpolated into shell
@@ -212,7 +212,7 @@ jobs:
       security-events: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -227,7 +227,7 @@ jobs:
 Or use this repository as a composite action:
 
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
   with:
     fetch-depth: 0
 - uses: ecoreal/agentic-risk-scan@v0

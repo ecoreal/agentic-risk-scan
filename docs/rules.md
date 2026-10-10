@@ -22,6 +22,7 @@ agentic-risk-scan rules --format markdown
 | <a id="gha005"></a>`GHA005` | medium/high | Secrets are referenced from an untrusted-trigger workflow. |
 | <a id="gha006"></a>`GHA006` | high | Untrusted events can reach a self-hosted runner. |
 | <a id="gha007"></a>`GHA007` | high | OIDC token minting is enabled on an untrusted-trigger workflow. |
+| <a id="gha008"></a>`GHA008` | low | A GitHub Action is referenced by a mutable tag, branch, or expression instead of a full commit SHA. |
 
 ## Agent Instructions
 

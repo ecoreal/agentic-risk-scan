@@ -77,6 +77,12 @@ UNTRUSTED_EXPRESSIONS = (
     "github.head_ref",
 )
 
+ACTION_USE_RE = re.compile(
+    r"^\s*(?:-\s*)?uses:\s*(?P<action>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@(?P<ref>[^\s#]+)"
+)
+FULL_COMMIT_SHA_RE = re.compile(r"^[0-9a-fA-F]{40}$")
+
+
 DANGEROUS_SHELL_PATTERNS = (
     re.compile(r"\b(eval|exec)\b", re.IGNORECASE),
     re.compile(r"\b(curl|wget)\b.+\|\s*(sh|bash|zsh)\b", re.IGNORECASE),
@@ -101,6 +107,26 @@ class GitHubActionsRule:
 
     def scan(self, rel_path: Path, text: str) -> list[Finding]:
         findings: list[Finding] = []
+        for line_number, action, ref in unpinned_action_refs(text):
+            findings.append(
+                make_finding(
+                    rule_id="GHA008",
+                    title="GitHub Action is referenced by a mutable ref",
+                    severity="low",
+                    path=rel_path,
+                    line=line_number,
+                    message=(
+                        f"{action} uses {ref!r} instead of an immutable commit SHA. "
+                        "A moving tag or branch can change the code executed by CI."
+                    ),
+                    evidence=f"uses: {action}@{ref}",
+                    remediation=(
+                        "Pin third-party Actions to a full 40-character commit SHA and keep the "
+                        "release tag in a trailing comment for update review."
+                    ),
+                    tags=("github-actions", "supply-chain", "pinning"),
+                )
+            )
         events = detect_events(text)
         has_untrusted_trigger = bool(events & UNTRUSTED_EVENTS)
         has_high_risk_trigger = bool(events & HIGHER_RISK_EVENTS)
@@ -271,6 +297,18 @@ class GitHubActionsRule:
             )
 
         return dedupe(findings)
+
+
+def unpinned_action_refs(text: str) -> list[tuple[int, str, str]]:
+    refs: list[tuple[int, str, str]] = []
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        match = ACTION_USE_RE.match(strip_comment(line))
+        if not match:
+            continue
+        ref = match.group("ref")
+        if not FULL_COMMIT_SHA_RE.fullmatch(ref):
+            refs.append((line_number, match.group("action"), ref))
+    return refs
 
 
 def detect_events(text: str) -> set[str]:

@@ -2,7 +2,7 @@
 
 Each fixture was verified to fire exactly the intended rule id before being
 committed here. Rules covered: AGENT002, CFG000, GHA004, GHA005, GHA006,
-GHA007, MCP000, MCP003, MCP004, MCP005, MCP006, MCP008, PKG002.
+GHA007, GHA008, MCP000, MCP003, MCP004, MCP005, MCP006, MCP008, PKG002.
 """
 
 from pathlib import Path
@@ -72,6 +72,22 @@ jobs:
 """,
         )
         self.assertIn("GHA006", rule_ids)
+
+    def test_gha008_mutable_action_ref(self) -> None:
+        rule_ids = _scan_file(
+            ".github/workflows/build.yml",
+            """
+name: build
+on:
+  push:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+""",
+        )
+        self.assertIn("GHA008", rule_ids)
 
     def test_gha007_id_token_write_on_untrusted_trigger(self) -> None:
         rule_ids = _scan_file(
