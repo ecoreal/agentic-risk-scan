@@ -30,6 +30,11 @@ RISKY_FLAGS = (
     "full-access",
 )
 TEMP_PATH_PREFIXES = ("/tmp/", "/var/tmp/", "~/downloads/", "/users/shared/")
+EXACT_SEMVER_RE = re.compile(
+    r"^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)"
+    r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
+)
 
 
 class MCPConfigRule:
@@ -265,9 +270,10 @@ def is_unpinned_npx(command_name: str, args: list[str]) -> bool:
     if not package_args:
         return False
     package = package_args[0]
-    if package.startswith("@"):
-        return package.count("@") < 2
-    return "@" not in package
+    if "@" not in package:
+        return True
+    package_name, version = package.rsplit("@", 1)
+    return not package_name or EXACT_SEMVER_RE.fullmatch(version) is None
 
 
 def dedupe(findings: list[Finding]) -> list[Finding]:

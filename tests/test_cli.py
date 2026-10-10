@@ -527,6 +527,42 @@ jobs:
             payload = json.loads(stdout)
             self.assertEqual({"AGENT005"}, {finding["rule_id"] for finding in payload["findings"]})
 
+    def test_changed_from_git_does_not_resolve_repository_symlinks(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run_git(root, "init", "-b", "main")
+            run_git(root, "config", "user.name", "test")
+            run_git(root, "config", "user.email", "test@example.invalid")
+            target = root / "target"
+            target.mkdir()
+            (target / "AGENTS.md").write_text("allowed-tools: *\n", encoding="utf-8")
+            run_git(root, "add", "target/AGENTS.md")
+            run_git(root, "commit", "-m", "target")
+            try:
+                (root / "linked.md").symlink_to(target / "AGENTS.md")
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks are not supported")
+            run_git(root, "add", "linked.md")
+            run_git(root, "commit", "-m", "symlink")
+
+            code, stdout, _ = capture_cli(
+                [
+                    "scan",
+                    str(root),
+                    "--changed-from",
+                    "HEAD~1",
+                    "--format",
+                    "json",
+                    "--fail-on",
+                    "none",
+                ]
+            )
+
+            self.assertEqual(0, code)
+            payload = json.loads(stdout)
+            self.assertEqual([], payload["findings"])
+            self.assertEqual(0, payload["scanned_files"])
+
     def test_changed_from_git_with_subdirectory_scan_root(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

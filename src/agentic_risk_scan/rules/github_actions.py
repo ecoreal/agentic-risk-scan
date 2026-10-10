@@ -45,6 +45,10 @@ AI_KEYWORDS = (
     "qodo",
     "goose",
 )
+AI_KEYWORD_PATTERNS = tuple(
+    re.compile(rf"\b{re.escape(keyword)}\b", re.IGNORECASE)
+    for keyword in AI_KEYWORDS
+)
 
 WRITE_SCOPES = (
     "actions",
@@ -347,8 +351,7 @@ def detect_write_permissions(text: str) -> list[tuple[int, str]]:
 def find_ai_lines(text: str) -> list[tuple[int, str]]:
     lines: list[tuple[int, str]] = []
     for line_number, line in enumerate(text.splitlines(), start=1):
-        lowered = line.lower()
-        if any(keyword in lowered for keyword in AI_KEYWORDS):
+        if any(pattern.search(line) for pattern in AI_KEYWORD_PATTERNS):
             lines.append((line_number, line.strip()))
     return lines
 

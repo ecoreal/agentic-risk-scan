@@ -31,6 +31,38 @@ class MCPAndPackageRuleTests(unittest.TestCase):
             self.assertIn("MCP002", rule_ids)
             self.assertIn("MCP007", rule_ids)
 
+    def test_mcp008_requires_exact_semver(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = root / ".mcp.json"
+            config.write_text(
+                """
+{
+  "mcpServers": {
+    "latest": {"command": "npx", "args": ["some-mcp-server@latest"]},
+    "next": {"command": "npx", "args": ["some-mcp-server@next"]},
+    "range": {"command": "npx", "args": ["some-mcp-server@^1.2.3"]},
+    "pinned": {"command": "npx", "args": ["some-mcp-server@1.2.3"]}
+  }
+}
+""",
+                encoding="utf-8",
+            )
+
+            result = scan_path(root)
+            findings = [finding for finding in result.findings if finding.rule_id == "MCP008"]
+            self.assertEqual(3, len(findings))
+            self.assertTrue(all("pinned" not in finding.message for finding in findings))
+
+    def test_package_json_non_object_is_skipped(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "package.json").write_text("[]", encoding="utf-8")
+
+            result = scan_path(root)
+            self.assertEqual([], result.findings)
+            self.assertEqual(1, result.scanned_files)
+
     def test_detects_package_lifecycle_risk(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
