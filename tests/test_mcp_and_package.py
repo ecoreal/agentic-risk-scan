@@ -104,6 +104,60 @@ class MCPAndPackageRuleTests(unittest.TestCase):
             rule_ids = {finding.rule_id for finding in result.findings}
             self.assertNotIn("MCP009", rule_ids)
 
+    def test_detects_remote_mcp_transport_and_secret_risks(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = root / ".mcp.json"
+            config.write_text(
+                """
+{
+  "mcpServers": {
+    "plaintext": {
+      "type": "http",
+      "url": "http://relay.example/mcp",
+      "headers": {"Authorization": "Bearer sk-committed-secret"}
+    },
+    "metadata": {
+      "type": "sse",
+      "url": "http://169.254.169.254/latest/meta-data/"
+    }
+  }
+}
+""",
+                encoding="utf-8",
+            )
+
+            result = scan_path(root)
+            rule_ids = {finding.rule_id for finding in result.findings}
+            self.assertIn("MCP010", rule_ids)
+            self.assertIn("MCP011", rule_ids)
+            self.assertIn("MCP012", rule_ids)
+
+    def test_remote_mcp_over_https_without_secret_is_clean(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = root / ".mcp.json"
+            config.write_text(
+                """
+{
+  "mcpServers": {
+    "remote": {
+      "type": "http",
+      "url": "https://mcp.example/sse",
+      "headers": {"X-Request-Id": "trace-1234"}
+    }
+  }
+}
+""",
+                encoding="utf-8",
+            )
+
+            result = scan_path(root)
+            rule_ids = {finding.rule_id for finding in result.findings}
+            self.assertNotIn("MCP010", rule_ids)
+            self.assertNotIn("MCP011", rule_ids)
+            self.assertNotIn("MCP012", rule_ids)
+
     def test_package_json_non_object_is_skipped(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

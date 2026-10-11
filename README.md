@@ -107,6 +107,9 @@ agentic-risk-scan init-ci --report-artifact
 - MCP servers launched through shell wrappers, runtime downloads, unpinned `npx`,
   broad runtime flags, temporary paths, inline secret-like values, or
   code-injecting environment variables (`NODE_OPTIONS`, `LD_PRELOAD`, `PYTHONPATH`).
+- Remote (HTTP/SSE) MCP servers reached over plaintext HTTP, pointed at
+  link-local or cloud metadata addresses, or configured with committed secret
+  headers.
 - npm install lifecycle scripts with `curl | sh`, `eval`, inline interpreters,
   secret-printing, or remote tarball dependencies.
 

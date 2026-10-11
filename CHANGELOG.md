@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added `MCP010`, `MCP011`, and `MCP012` for remote (HTTP/SSE) MCP servers:
+  plaintext `http://` transport, link-local/cloud-metadata targets (SSRF against
+  the instance metadata service), and committed secret headers such as a literal
+  `Authorization: Bearer ...` value.
 - Added `MCP009` to flag MCP servers that set code-injecting environment
   variables (`NODE_OPTIONS`, `LD_PRELOAD`, `DYLD_INSERT_LIBRARIES`,
   `PYTHONSTARTUP`, `BASH_ENV`, `GIT_SSH_COMMAND`, and path-hijacking variables

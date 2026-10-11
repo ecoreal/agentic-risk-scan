@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import urllib.parse
 from pathlib import Path
 from typing import Any
 
@@ -62,6 +63,20 @@ LIBRARY_PATH_ENV_KEYS = {
     "rubylib": "Ruby resolves libraries from RUBYLIB.",
     "zdotdir": "ZDOTDIR changes where zsh loads its startup files from.",
 }
+
+# Remote (streamable HTTP / SSE) MCP servers are configured with a URL instead of
+# a command. Plaintext transport leaks the JSON-RPC traffic and any auth headers,
+# and link-local or cloud-metadata targets let a config turn the client into an
+# SSRF pivot against the host's metadata service.
+CLOUD_METADATA_HOSTS = {
+    "169.254.169.254",  # AWS/GCP/Azure/OpenStack IMDS
+    "100.100.100.200",  # Alibaba Cloud metadata
+    "fd00:ec2::254",  # AWS IPv6 IMDS
+    "metadata.google.internal",
+    "metadata.goog",
+}
+LINK_LOCAL_PREFIXES = ("169.254.", "fe80:", "::ffff:169.254.")
+AUTH_HEADER_KEYS = {"authorization", "proxy-authorization", "x-auth-token", "x-api-key"}
 EXACT_SEMVER_RE = re.compile(
     r"^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)"
     r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
@@ -119,7 +134,7 @@ def extract_servers(data: Any) -> dict[str, Any]:
         value = data.get(key)
         if isinstance(value, dict):
             return value
-    if "command" in data:
+    if "command" in data or "url" in data:
         return {"default": data}
     return {}
 
@@ -257,6 +272,7 @@ def scan_server(
     env = server_config.get("env")
     if isinstance(env, dict):
         findings.extend(scan_environment(rel_path, text, server_name, env, line))
+    findings.extend(scan_remote_server(rel_path, text, server_name, server_config, line))
 
     if is_unpinned_npx(command_name, args):
         findings.append(
@@ -317,6 +333,99 @@ def scan_environment(
             )
         )
     return findings
+
+
+def scan_remote_server(
+    rel_path: Path,
+    text: str,
+    server_name: str,
+    server_config: dict[str, Any],
+    fallback_line: int | None,
+) -> list[Finding]:
+    findings: list[Finding] = []
+    raw_url = server_config.get("url")
+    url_line = find_key_line(text, "url") or fallback_line
+    if isinstance(raw_url, str) and raw_url.strip():
+        url = raw_url.strip()
+        parsed = urllib.parse.urlsplit(url)
+        host = (parsed.hostname or "").strip().lower()
+        if parsed.scheme.lower() == "http":
+            findings.append(
+                make_finding(
+                    rule_id="MCP010",
+                    title="Remote MCP server uses plaintext HTTP",
+                    severity="high",
+                    path=rel_path,
+                    line=url_line,
+                    message=(
+                        f"Remote MCP server '{server_name}' connects over plaintext HTTP, "
+                        "exposing its traffic and auth headers to anyone on the path."
+                    ),
+                    evidence=url,
+                    remediation="Use an https:// URL for remote MCP servers so traffic and headers stay encrypted.",
+                    tags=("mcp", "transport", "network"),
+                )
+            )
+        if is_metadata_or_link_local(host):
+            findings.append(
+                make_finding(
+                    rule_id="MCP011",
+                    title="Remote MCP server targets a link-local or cloud metadata address",
+                    severity="high",
+                    path=rel_path,
+                    line=url_line,
+                    message=(
+                        f"Remote MCP server '{server_name}' points at {host}, a link-local or "
+                        "cloud metadata endpoint. This can turn the client into an SSRF pivot "
+                        "against the host's instance credentials."
+                    ),
+                    evidence=url,
+                    remediation="Point remote MCP servers at reviewed public or private service hosts, never at link-local or metadata addresses.",
+                    tags=("mcp", "network", "ssrf"),
+                )
+            )
+
+    headers = server_config.get("headers")
+    if isinstance(headers, dict):
+        for key, value in headers.items():
+            if looks_inline_header_secret(str(key), value):
+                findings.append(
+                    make_finding(
+                        rule_id="MCP012",
+                        title="MCP config embeds an inline secret header",
+                        severity="high",
+                        path=rel_path,
+                        line=find_key_line(text, str(key)) or url_line,
+                        message=f"Remote MCP server '{server_name}' appears to embed an inline secret in its headers.",
+                        evidence=str(key),
+                        remediation=(
+                            "Reference the secret through the client's environment or secret store "
+                            "instead of committing the value in the MCP config."
+                        ),
+                        tags=("mcp", "secrets"),
+                    )
+                )
+    return findings
+
+
+def is_metadata_or_link_local(host: str) -> bool:
+    if not host:
+        return False
+    if host in CLOUD_METADATA_HOSTS:
+        return True
+    return host.startswith(LINK_LOCAL_PREFIXES)
+
+
+def looks_inline_header_secret(key: str, value: Any) -> bool:
+    """True when a remote MCP header carries a committed credential."""
+
+    if not isinstance(value, str) or not looks_inline_secret(value):
+        return False
+    lowered = key.strip().lower()
+    if lowered in AUTH_HEADER_KEYS or SECRET_KEY.search(key):
+        return True
+    # A literal bearer/basic token is a credential regardless of the header name.
+    return re.match(r"^(bearer|basic|token)\s+\S", value.strip(), re.I) is not None
 
 
 def normalize_args(value: Any) -> list[str]:
