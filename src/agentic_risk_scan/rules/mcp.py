@@ -30,6 +30,38 @@ RISKY_FLAGS = (
     "full-access",
 )
 TEMP_PATH_PREFIXES = ("/tmp/", "/var/tmp/", "~/downloads/", "/users/shared/")
+# Environment variables that let a process inject code or load attacker-controlled
+# libraries before the MCP server itself runs. Committing them into an MCP config
+# is a code-execution primitive independent of the server binary, because the
+# runtime (Node, CPython, the dynamic linker, the shell) honors them at startup.
+CODE_EXECUTION_ENV_KEYS = {
+    "node_options": "Node.js evaluates code and loads modules from NODE_OPTIONS.",
+    "ld_preload": "The dynamic linker preloads LD_PRELOAD libraries into the process.",
+    "ld_audit": "The dynamic linker loads LD_AUDIT libraries into the process.",
+    "dyld_insert_libraries": "macOS injects DYLD_INSERT_LIBRARIES into the process.",
+    "pythonstartup": "CPython runs the PYTHONSTARTUP file when the interpreter starts.",
+    "perl5opt": "Perl applies PERL5OPT command-line switches, including -M.",
+    "rubyopt": "Ruby applies RUBYOPT switches, including -r.",
+    "bash_env": "Bash sources BASH_ENV before running non-interactive scripts.",
+    "shellopts": "SHELLOPTS enables shell options such as xtrace for spawned shells.",
+    "prompt_command": "PROMPT_COMMAND runs arbitrary shell code before each prompt.",
+    "git_ssh_command": "GIT_SSH_COMMAND runs an arbitrary program for Git SSH operations.",
+    "git_external_diff": "GIT_EXTERNAL_DIFF runs an arbitrary program during Git diffs.",
+    "npm_config_node_options": "npm forwards NODE_OPTIONS to child Node.js processes.",
+}
+# Weaker, but still hijackable: these variables change where a runtime resolves
+# modules or libraries, so an attacker-controlled path can shadow real code.
+LIBRARY_PATH_ENV_KEYS = {
+    "node_path": "Node.js resolves modules from NODE_PATH, which can shadow real packages.",
+    "ld_library_path": "The dynamic linker resolves libraries from LD_LIBRARY_PATH.",
+    "dyld_library_path": "macOS resolves libraries from DYLD_LIBRARY_PATH.",
+    "dyld_framework_path": "macOS resolves frameworks from DYLD_FRAMEWORK_PATH.",
+    "pythonpath": "CPython resolves imports from PYTHONPATH, which can shadow real modules.",
+    "pythonhome": "CPython resolves its standard library from PYTHONHOME.",
+    "perl5lib": "Perl resolves modules from PERL5LIB.",
+    "rubylib": "Ruby resolves libraries from RUBYLIB.",
+    "zdotdir": "ZDOTDIR changes where zsh loads its startup files from.",
+}
 EXACT_SEMVER_RE = re.compile(
     r"^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)"
     r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
@@ -222,6 +254,10 @@ def scan_server(
                     )
                 )
 
+    env = server_config.get("env")
+    if isinstance(env, dict):
+        findings.extend(scan_environment(rel_path, text, server_name, env, line))
+
     if is_unpinned_npx(command_name, args):
         findings.append(
             make_finding(
@@ -239,6 +275,47 @@ def scan_server(
             )
         )
 
+    return findings
+
+
+def scan_environment(
+    rel_path: Path,
+    text: str,
+    server_name: str,
+    env: dict[str, Any],
+    fallback_line: int | None,
+) -> list[Finding]:
+    findings: list[Finding] = []
+    for key, value in env.items():
+        name = str(key)
+        lowered = name.lower()
+        if lowered in CODE_EXECUTION_ENV_KEYS:
+            severity = "high"
+            reason = CODE_EXECUTION_ENV_KEYS[lowered]
+        elif lowered in LIBRARY_PATH_ENV_KEYS:
+            severity = "medium"
+            reason = LIBRARY_PATH_ENV_KEYS[lowered]
+        else:
+            continue
+        findings.append(
+            make_finding(
+                rule_id="MCP009",
+                title="MCP server sets a code-injecting environment variable",
+                severity=severity,
+                path=rel_path,
+                line=find_key_line(text, name) or fallback_line,
+                message=(
+                    f"MCP server '{server_name}' sets {name} in its environment. {reason}"
+                ),
+                evidence=f"{name}={value}",
+                remediation=(
+                    "Remove runtime-hijacking environment variables from the MCP config. "
+                    "Pass only the specific configuration the server needs, and set secrets "
+                    "or loader paths through a trusted launcher instead of the committed config."
+                ),
+                tags=("mcp", "code-execution", "environment"),
+            )
+        )
     return findings
 
 

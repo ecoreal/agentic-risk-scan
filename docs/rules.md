@@ -67,6 +67,7 @@ agentic-risk-scan rules --format markdown
 | <a id="mcp006"></a>`MCP006` | low | MCP server has overly broad working directory. |
 | <a id="mcp007"></a>`MCP007` | high | MCP config contains an inline secret-like value. |
 | <a id="mcp008"></a>`MCP008` | medium | MCP server uses an unpinned `npx` package. |
+| <a id="mcp009"></a>`MCP009` | high | MCP server sets a code-injecting environment variable (`NODE_OPTIONS`, `LD_PRELOAD`, `PYTHONPATH`, ...). |
 
 ## Package Scripts
 

@@ -55,6 +55,7 @@ RULES: tuple[RuleInfo, ...] = (
     RuleInfo("MCP006", "low", "MCP server has overly broad working directory", "MCP", ("mcp", "filesystem")),
     RuleInfo("MCP007", "high", "MCP config contains inline secret-like environment value", "MCP", ("mcp", "secrets")),
     RuleInfo("MCP008", "medium", "MCP server uses unpinned npx package", "MCP", ("mcp", "supply-chain")),
+    RuleInfo("MCP009", "high", "MCP server sets a code-injecting environment variable", "MCP", ("mcp", "code-execution", "environment")),
     RuleInfo("PKG001", "high", "Install lifecycle script runs dangerous shell behavior", "Package Scripts", ("package", "supply-chain")),
     RuleInfo("PKG002", "medium", "npm script contains dangerous shell behavior", "Package Scripts", ("package", "shell")),
     RuleInfo("PKG003", "medium", "npm script may expose secret environment values", "Package Scripts", ("package", "secrets")),

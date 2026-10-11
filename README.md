@@ -105,7 +105,8 @@ agentic-risk-scan init-ci --report-artifact
   grants, disabled approvals, full-access permission profiles, literal
   secret-like values, and secret-redaction bypasses.
 - MCP servers launched through shell wrappers, runtime downloads, unpinned `npx`,
-  broad runtime flags, temporary paths, or inline secret-like values.
+  broad runtime flags, temporary paths, inline secret-like values, or
+  code-injecting environment variables (`NODE_OPTIONS`, `LD_PRELOAD`, `PYTHONPATH`).
 - npm install lifecycle scripts with `curl | sh`, `eval`, inline interpreters,
   secret-printing, or remote tarball dependencies.
 

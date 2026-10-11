@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Added `MCP009` to flag MCP servers that set code-injecting environment
+  variables (`NODE_OPTIONS`, `LD_PRELOAD`, `DYLD_INSERT_LIBRARIES`,
+  `PYTHONSTARTUP`, `BASH_ENV`, `GIT_SSH_COMMAND`, and path-hijacking variables
+  such as `PYTHONPATH`/`NODE_PATH`), which let a committed config run attacker
+  code before the server binary starts.
 - Added a PyPI publish workflow using OIDC Trusted Publishing, triggered on
   published GitHub releases, with separate build and publish jobs and a
   protected `pypi` environment for the `id-token: write` step.
