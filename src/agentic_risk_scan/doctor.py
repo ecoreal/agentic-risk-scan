@@ -8,7 +8,7 @@ from typing import Any
 
 from .config import ProjectConfig
 from .inventory import InventoryResult
-from .models import SEVERITY_ORDER, ScanResult
+from .models import ScanResult
 
 
 @dataclass(frozen=True)
