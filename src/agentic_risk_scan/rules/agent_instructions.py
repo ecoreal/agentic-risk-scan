@@ -75,6 +75,44 @@ PROMPT_INJECTION_PATTERNS = (
     re.compile(r"\bsend\b.*\b(secret|token|credential|api key)\b.*\b(http|https|webhook|server)\b", re.I),
 )
 
+# A line that *documents* an injection pattern (security guidance, detector
+# reference tables) quotes the phrase inside a string/backtick and explains it
+# with defensive vocabulary. That is a mention, not a payload: keep the finding
+# but at info severity so security teams can still see (and inline-ignore) it.
+DEFENSIVE_CONTEXT_RE = re.compile(
+    r"\b(detect|detected|detection|scan|scanner|scans|redact|redaction|sanitiz[a-z]*"
+    r"|block|blocked|pattern|patterns|resembl[a-z]*|e\.g\.|example|malicious|suspicious"
+    r"|injection|untrusted|do not follow|never follow|not\s+follow)\b",
+    re.IGNORECASE,
+)
+
+
+def quoted_phrase(line: str, pattern: re.Pattern[str]) -> bool:
+    match = pattern.search(line)
+    if not match:
+        return False
+    start, end = match.span()
+    before = line[:start].rstrip()
+    after = line[end:].lstrip()
+    if not before or not after:
+        return False
+    return before[-1] in "\"'`" and after[0] in "\"'`"
+
+
+def is_defensive_mention(line: str) -> bool:
+    """True when the line cites an injection phrase rather than carrying one.
+
+    Quoting is the load-bearing signal: a payload is written as an
+    instruction, while reference material and defensive guidance put the
+    phrase inside quotes or backticks ("ignore previous instructions"). Also
+    require at least a few words of surrounding prose so a one-word line that
+    is itself only a quoted phrase still counts as a payload.
+    """
+    if not any(quoted_phrase(line, pattern) for pattern in PROMPT_INJECTION_PATTERNS):
+        return False
+    return len(line.split()) >= 6
+
+
 DANGEROUS_COMMAND_PATTERNS = (
     re.compile(r"\b(curl|wget)\b.+\|\s*(sh|bash|zsh)\b", re.I),
     re.compile(r"\brm\s+-rf\s+(/|\$HOME|~|\*)", re.I),
@@ -150,16 +188,20 @@ class AgentInstructionRule:
                     break
 
             if any(pattern.search(line) for pattern in PROMPT_INJECTION_PATTERNS):
+                mention = is_defensive_mention(line)
                 findings.append(
                     make_finding(
                         rule_id="AGENT003",
                         title="Prompt-injection phrase in agent instructions",
-                        severity="high",
+                        severity="info" if mention else "high",
                         path=rel_path,
                         line=line_number,
                         message=(
-                            "This line resembles an instruction designed to override higher-priority "
-                            "agent policy or extract secrets."
+                            "This line quotes a known override phrase while describing detection or "
+                            "redaction; it is likely documentation. Confirm and inline-ignore if so."
+                            if mention
+                            else "This line resembles an instruction designed to override "
+                            "higher-priority agent policy or extract secrets."
                         ),
                         evidence=line,
                         remediation=(

@@ -31,7 +31,7 @@ agentic-risk-scan rules --format markdown
 | --- | --- | --- |
 | <a id="agent001"></a>`AGENT001` | high | Bidirectional Unicode control character in agent instructions. |
 | <a id="agent002"></a>`AGENT002` | medium | Zero-width Unicode character in agent instructions. |
-| <a id="agent003"></a>`AGENT003` | high | Prompt-injection phrase in committed agent instructions. |
+| <a id="agent003"></a>`AGENT003` | high | Prompt-injection phrase in committed agent instructions. A quoted phrase inside explanatory prose (detector references, "do not follow" guidance) is reported at `info`. |
 | <a id="agent004"></a>`AGENT004` | high | Dangerous command embedded in agent instructions. |
 | <a id="agent005"></a>`AGENT005` | medium | Agent instruction file requests broad tool access. |
 

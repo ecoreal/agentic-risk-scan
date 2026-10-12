@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- `AGENT003` now reports a quoted phrase inside explanatory prose at `info`
+  instead of `high`: security guidance that says `do not follow "ignore
+  previous instructions"` and detector reference tables that cite attack
+  strings are mentions, not payloads. Raw unquoted payload lines and
+  phrase-only quoted lines stay `high`. Measured on getsentry/sentry-
+  javascript's `.agents/skills` tree: 8 high downgraded to info, 0 raw
+  payloads downgraded (each case pinned by a test).
 - Corrected the `CFG006` message: `security.toolSandboxing` defaults to
   `false` in Gemini CLI upstream, so an explicit `false` is a documented
   decision, not a hidden weakening. The finding now says that and points to
