@@ -22,6 +22,7 @@ agentic-risk-scan rules --format markdown
 | <a id="gha005"></a>`GHA005` | medium/high | Secrets are referenced from an untrusted-trigger workflow. |
 | <a id="gha006"></a>`GHA006` | high | Untrusted events can reach a self-hosted runner. |
 | <a id="gha007"></a>`GHA007` | high | OIDC token minting is enabled on an untrusted-trigger workflow. |
+| <a id="gha008"></a>`GHA008` | low | A GitHub Action is referenced by a mutable tag, branch, or expression instead of a full commit SHA. |
 
 ## Agent Instructions
 
@@ -66,6 +67,10 @@ agentic-risk-scan rules --format markdown
 | <a id="mcp006"></a>`MCP006` | low | MCP server has overly broad working directory. |
 | <a id="mcp007"></a>`MCP007` | high | MCP config contains an inline secret-like value. |
 | <a id="mcp008"></a>`MCP008` | medium | MCP server uses an unpinned `npx` package. |
+| <a id="mcp009"></a>`MCP009` | high | MCP server sets a code-injecting environment variable (`NODE_OPTIONS`, `LD_PRELOAD`, `PYTHONPATH`, ...). |
+| <a id="mcp010"></a>`MCP010` | high | Remote MCP server uses plaintext HTTP. |
+| <a id="mcp011"></a>`MCP011` | high | Remote MCP server targets a link-local or cloud metadata address. |
+| <a id="mcp012"></a>`MCP012` | high | MCP config embeds an inline secret header. |
 
 ## Package Scripts
 

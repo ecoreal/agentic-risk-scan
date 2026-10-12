@@ -52,6 +52,8 @@ class PackageScriptsRule:
             data = json.loads(text)
         except json.JSONDecodeError:
             return []
+        if not isinstance(data, dict):
+            return []
 
         findings: list[Finding] = []
         scripts = data.get("scripts", {})

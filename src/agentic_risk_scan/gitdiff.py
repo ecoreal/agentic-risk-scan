@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -68,7 +69,14 @@ def git_top_level(path: Path) -> Path:
 def repo_path_to_scan_path(top_level: Path, scan_root: Path, raw_path: str) -> str | None:
     if not raw_path:
         return None
-    absolute = (top_level / raw_path).resolve()
+    top_level = top_level.resolve()
+    scan_root = scan_root.resolve()
+    raw = Path(raw_path)
+    absolute = raw if raw.is_absolute() else top_level / raw
+    # Normalize lexical `.` / `..` components without resolving symlinks.
+    # The scanner must receive the repository path itself so its symlink
+    # checks can reject links before any target is followed.
+    absolute = Path(os.path.normpath(absolute))
     try:
         return absolute.relative_to(scan_root).as_posix()
     except ValueError:

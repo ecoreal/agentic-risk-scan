@@ -1,5 +1,50 @@
 # Changelog
 
+## Unreleased
+
+- Agent-skill instruction files are now scanned: `AGENT001`-`AGENT005` apply
+  to `.claude/skills/**/SKILL.md` and `skills/**/SKILL.md` in addition to the
+  existing instruction basenames and markers. Skills are a common distribution
+  vector for hidden-Unicode, injection phrasing, and download-and-execute
+  instructions (compare `mcp-scan`, which scans MCP servers and skills).
+- `AGENT003` now matches real-world override phrasing that inserts an article,
+  e.g. "ignore the previous instructions" (previously only the article-less
+  "ignore previous instructions" matched), and the adjective list gained
+  `prior`/`preceding`. Regression tests cover the article variants for both
+  `ignore` and `disregard`.
+- Fixed `--changed-from`/`--changed` scanning the entire repository when git
+  reported no changed files: an empty changed-file set was treated the same as
+  "no filter configured", so a PR with only unrelated changes (or only
+  deletions) scanned everything. `ScanConfig.changed_paths` now uses `None` for
+  "no path filter" and `()` for "nothing changed", with regression tests for the
+  empty-diff and deletions-only cases.
+- Added `MCP010`, `MCP011`, and `MCP012` for remote (HTTP/SSE) MCP servers:
+  plaintext `http://` transport, link-local/cloud-metadata targets (SSRF against
+  the instance metadata service), and committed secret headers such as a literal
+  `Authorization: Bearer ...` value.
+- Added `MCP009` to flag MCP servers that set code-injecting environment
+  variables (`NODE_OPTIONS`, `LD_PRELOAD`, `DYLD_INSERT_LIBRARIES`,
+  `PYTHONSTARTUP`, `BASH_ENV`, `GIT_SSH_COMMAND`, and path-hijacking variables
+  such as `PYTHONPATH`/`NODE_PATH`), which let a committed config run attacker
+  code before the server binary starts.
+- Added a PyPI publish workflow using OIDC Trusted Publishing, triggered on
+  published GitHub releases, with separate build and publish jobs and a
+  protected `pypi` environment for the `id-token: write` step.
+- Added `docs/releasing.md` documenting the one-time PyPI Trusted Publishing
+  setup and the tag-and-release flow.
+- Expanded the README example with real multi-rule scan output (GitHub Actions
+  and MCP findings) and a clean safe-example contrast.
+- Added a README "Why This vs a Generic SAST Tool" section mapping the agentic
+  attack surface (PR/comment injection, MCP download-and-execute, hidden-Unicode
+  instructions, over-privileged agent config) to concrete rule IDs.
+- Added direct tests for 13 previously-untested rules (GHA004-GHA007, MCP000,
+  MCP003-MCP006, MCP008, PKG002, CFG000, AGENT002), bringing every rule under
+  direct test coverage. Test count rose from 34 to 47.
+- Added regression tests that pin the shipped `examples/` fixtures: both safe
+  examples must stay at 0 findings, and the unsafe example must keep the exact
+  severity counts quoted in the README, guarding against false-positive drift
+  and README/scanner divergence. Test count rose from 47 to 51.
+
 ## 0.10.0
 
 - Added `agentic-risk-scan doctor` to diagnose scanner adoption and current

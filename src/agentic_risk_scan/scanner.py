@@ -65,7 +65,7 @@ def scan_path(path: str | Path, *, config: ScanConfig | None = None) -> ScanResu
 
     files = (
         iter_changed_files(root, config.changed_paths, include_ignored=config.include_ignored)
-        if config.changed_paths
+        if config.changed_paths is not None
         else iter_files(root, include_ignored=config.include_ignored)
     )
     for file_path in files:
@@ -111,7 +111,10 @@ def iter_files(root: Path, *, include_ignored: bool = False) -> list[Path]:
             ]
         current_path = Path(current)
         for filename in filenames:
-            files.append(current_path / filename)
+            file_path = current_path / filename
+            if file_path.is_symlink():
+                continue
+            files.append(file_path)
     return files
 
 
@@ -138,6 +141,8 @@ def iter_changed_files(
                 seen.add(candidate)
             continue
 
+        if candidate.is_symlink():
+            continue
         if candidate.is_dir():
             nested_files = iter_files(candidate, include_ignored=include_ignored)
         elif candidate.is_file():
@@ -159,7 +164,25 @@ def iter_changed_files(
 
 def resolve_changed_path(root: Path, raw_path: str) -> Path | None:
     path = Path(raw_path)
-    candidate = path.resolve() if path.is_absolute() else (root / path).resolve()
+    candidate = path if path.is_absolute() else root / path
+
+    # Check the lexical path before resolving it.  Resolving first turns a
+    # symlink into its target, which makes a changed symlink pointing back
+    # inside the repository indistinguishable from a regular path.
+    try:
+        relative = candidate.relative_to(root)
+    except ValueError:
+        return None
+
+    current = root
+    for part in relative.parts:
+        if part in {"", "."}:
+            continue
+        current /= part
+        if current.is_symlink():
+            return None
+
+    candidate = candidate.resolve()
     try:
         candidate.relative_to(root)
     except ValueError:

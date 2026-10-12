@@ -7,6 +7,8 @@ import unittest
 import io
 
 from agentic_risk_scan.cli import main
+from agentic_risk_scan.models import ScanConfig
+from agentic_risk_scan.scanner import scan_path
 
 
 def run_cli(args: list[str]) -> int:
@@ -25,6 +27,58 @@ def capture_cli(args: list[str]) -> tuple[int, str, str]:
 
 
 class CLITests(unittest.TestCase):
+    def test_scan_does_not_follow_file_symlinks_outside_root(self) -> None:
+        with TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            root = base / "repo"
+            root.mkdir()
+            outside = base / "outside.md"
+            outside.write_text("allowed-tools: *\n", encoding="utf-8")
+            try:
+                (root / "AGENTS.md").symlink_to(outside)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks are not supported")
+
+            result = scan_path(root)
+
+            self.assertEqual(result.findings, [])
+            self.assertEqual(result.scanned_files, 0)
+
+    def test_changed_directory_symlink_is_not_followed(self) -> None:
+        with TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            root = base / "repo"
+            root.mkdir()
+            outside = base / "outside"
+            outside.mkdir()
+            (outside / "AGENTS.md").write_text("allowed-tools: *\n", encoding="utf-8")
+            try:
+                (root / "linked").symlink_to(outside, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("directory symlinks are not supported")
+
+            result = scan_path(root, config=ScanConfig(root=root, changed_paths=("linked",)))
+
+            self.assertEqual(result.findings, [])
+            self.assertEqual(result.scanned_files, 0)
+
+    def test_changed_directory_symlink_inside_root_is_not_followed(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp) / "repo"
+            root.mkdir()
+            target = root / "tracked-target"
+            target.mkdir()
+            (target / "AGENTS.md").write_text("allowed-tools: *\n", encoding="utf-8")
+            try:
+                (root / "linked").symlink_to(target, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("directory symlinks are not supported")
+
+            result = scan_path(root, config=ScanConfig(root=root, changed_paths=("linked",)))
+
+            self.assertEqual(result.findings, [])
+            self.assertEqual(result.scanned_files, 0)
+
     def test_json_output_file_and_fail_on_none(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -126,6 +180,24 @@ jobs:
             self.assertEqual(0, excluded)
             self.assertEqual(0, disabled)
 
+    def test_rejects_non_positive_max_file_size(self) -> None:
+        with self.assertRaises(SystemExit) as raised:
+            main(["scan", ".", "--max-file-size", "0"])
+        self.assertEqual(2, raised.exception.code)
+
+    def test_invalid_config_is_reported_without_traceback(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = root / ".agentic-risk-scan.json"
+            config.write_text("{not valid json", encoding="utf-8")
+
+            code, stdout, stderr = capture_cli(["scan", str(root)])
+
+            self.assertEqual(2, code)
+            self.assertEqual("", stdout)
+            self.assertIn("error:", stderr)
+            self.assertNotIn("Traceback", stderr)
+
     def test_init_config_refuses_overwrite(self) -> None:
         with TemporaryDirectory() as tmp:
             config = Path(tmp) / ".agentic-risk-scan.json"
@@ -152,6 +224,8 @@ jobs:
             self.assertIn('refs/remotes/origin/${{ github.base_ref }}" --depth=1', text)
             self.assertIn("changed_from: origin/${{ github.base_ref }}", text)
             self.assertIn("format: sarif", text)
+            self.assertIn("security-events: write", text)
+            self.assertNotIn("permissions:\n  contents: read\n  security-events: write", text)
             self.assertNotIn("upload-artifact", text)
 
     def test_init_ci_can_upload_html_report_artifacts(self) -> None:
@@ -166,7 +240,7 @@ jobs:
             self.assertIn("format: html", text)
             self.assertIn("agentic-risk-pr-report.html", text)
             self.assertIn("agentic-risk-full-report.html", text)
-            self.assertIn("actions/upload-artifact@v4", text)
+            self.assertIn("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02", text)
             self.assertIn("if: always()", text)
 
     def test_init_ci_refuses_overwrite_without_force(self) -> None:
@@ -452,6 +526,104 @@ jobs:
             self.assertEqual(0, code)
             payload = json.loads(stdout)
             self.assertEqual({"AGENT005"}, {finding["rule_id"] for finding in payload["findings"]})
+
+    def test_changed_from_git_with_no_changes_does_not_scan_entire_repository(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run_git(root, "init", "-b", "main")
+            run_git(root, "config", "user.name", "test")
+            run_git(root, "config", "user.email", "test@example.invalid")
+            (root / "AGENTS.md").write_text("allowed-tools: *\n", encoding="utf-8")
+            run_git(root, "add", "AGENTS.md")
+            run_git(root, "commit", "-m", "instructions")
+
+            code, stdout, _ = capture_cli(
+                ["scan", str(root), "--changed-from", "HEAD", "--format", "json"]
+            )
+            self.assertEqual(0, code)
+            payload = json.loads(stdout)
+            self.assertEqual(0, payload["scanned_files"])
+            self.assertEqual([], payload["findings"])
+
+            code, report, _ = capture_cli(
+                ["report", str(root), "--changed-from", "HEAD", "--fail-on", "none"]
+            )
+            self.assertEqual(0, code)
+            self.assertIn("- Findings: `none`", report)
+            self.assertIn("- Attack surfaces: `none`", report)
+
+            code, stdout, _ = capture_cli(
+                ["scan", str(root), "--format", "json", "--fail-on", "none"]
+            )
+            self.assertEqual(0, code)
+            self.assertEqual(1, json.loads(stdout)["scanned_files"])
+
+    def test_changed_from_git_with_only_deletions_does_not_scan_entire_repository(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run_git(root, "init", "-b", "main")
+            run_git(root, "config", "user.name", "test")
+            run_git(root, "config", "user.email", "test@example.invalid")
+            (root / "AGENTS.md").write_text("allowed-tools: *\n", encoding="utf-8")
+            (root / "removed.txt").write_text("removed\n", encoding="utf-8")
+            run_git(root, "add", "AGENTS.md", "removed.txt")
+            run_git(root, "commit", "-m", "initial")
+            (root / "removed.txt").unlink()
+            run_git(root, "add", "-u")
+            run_git(root, "commit", "-m", "remove file")
+
+            code, stdout, _ = capture_cli(
+                [
+                    "scan",
+                    str(root),
+                    "--changed-from",
+                    "HEAD~1",
+                    "--format",
+                    "json",
+                    "--fail-on",
+                    "none",
+                ]
+            )
+            self.assertEqual(0, code)
+            payload = json.loads(stdout)
+            self.assertEqual(0, payload["scanned_files"])
+            self.assertEqual([], payload["findings"])
+
+    def test_changed_from_git_does_not_resolve_repository_symlinks(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run_git(root, "init", "-b", "main")
+            run_git(root, "config", "user.name", "test")
+            run_git(root, "config", "user.email", "test@example.invalid")
+            target = root / "target"
+            target.mkdir()
+            (target / "AGENTS.md").write_text("allowed-tools: *\n", encoding="utf-8")
+            run_git(root, "add", "target/AGENTS.md")
+            run_git(root, "commit", "-m", "target")
+            try:
+                (root / "linked.md").symlink_to(target / "AGENTS.md")
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks are not supported")
+            run_git(root, "add", "linked.md")
+            run_git(root, "commit", "-m", "symlink")
+
+            code, stdout, _ = capture_cli(
+                [
+                    "scan",
+                    str(root),
+                    "--changed-from",
+                    "HEAD~1",
+                    "--format",
+                    "json",
+                    "--fail-on",
+                    "none",
+                ]
+            )
+
+            self.assertEqual(0, code)
+            payload = json.loads(stdout)
+            self.assertEqual([], payload["findings"])
+            self.assertEqual(0, payload["scanned_files"])
 
     def test_changed_from_git_with_subdirectory_scan_root(self) -> None:
         with TemporaryDirectory() as tmp:

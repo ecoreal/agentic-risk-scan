@@ -18,6 +18,13 @@ from .scanner import scan_path
 from .workflow import DEFAULT_WORKFLOW_PATH, write_workflow
 
 
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("must be at least 1")
+    return parsed
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="agentic-risk-scan",
@@ -187,7 +194,7 @@ def add_scan_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--max-file-size",
-        type=int,
+        type=positive_int,
         default=1_000_000,
         help="maximum file size in bytes to read",
     )
@@ -235,7 +242,7 @@ def add_inventory_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--max-file-size",
-        type=int,
+        type=positive_int,
         default=1_000_000,
         help="maximum file size in bytes to read",
     )
@@ -328,7 +335,7 @@ def add_report_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--max-file-size",
-        type=int,
+        type=positive_int,
         default=1_000_000,
         help="maximum file size in bytes to read",
     )
@@ -381,7 +388,7 @@ def add_doctor_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--max-file-size",
-        type=int,
+        type=positive_int,
         default=1_000_000,
         help="maximum file size in bytes to read",
     )
@@ -412,7 +419,7 @@ def run_scan(args: argparse.Namespace) -> int:
         exclude=tuple(project_config.exclude) + tuple(args.exclude),
         disabled_rules=tuple(project_config.disabled_rules) + tuple(args.disable_rule),
         inline_ignores=not args.no_inline_ignores,
-        changed_paths=tuple(changed_paths),
+        changed_paths=tuple(changed_paths) if args.changed or args.changed_from else None,
     )
     result = scan_path(path, config=config)
     result.findings = project_config.filter_findings(result.findings)
@@ -505,7 +512,7 @@ def run_report(args: argparse.Namespace) -> int:
         exclude=tuple(project_config.exclude) + tuple(args.exclude),
         disabled_rules=tuple(project_config.disabled_rules) + tuple(args.disable_rule),
         inline_ignores=not args.no_inline_ignores,
-        changed_paths=tuple(changed_paths),
+        changed_paths=tuple(changed_paths) if args.changed or args.changed_from else None,
     )
     scan_result = scan_path(path, config=config)
     scan_result.findings = project_config.filter_findings(scan_result.findings)
@@ -586,7 +593,13 @@ def main(argv: list[str] | None = None) -> int:
         argv = ["scan", *argv]
     parser = build_parser()
     args = parser.parse_args(argv)
-    return int(args.func(args))
+    try:
+        return int(args.func(args))
+    except (OSError, ValueError) as exc:
+        # Configuration, input, and output failures are expected CLI errors.
+        # Keep them concise and actionable instead of exposing a traceback.
+        sys.stderr.write(f"error: {exc}\n")
+        return 2
 
 
 if __name__ == "__main__":

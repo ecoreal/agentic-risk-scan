@@ -70,7 +70,7 @@ def collect_inventory(path: str | Path, *, config: ScanConfig | None = None) -> 
 
     files = (
         iter_changed_files(root, config.changed_paths, include_ignored=config.include_ignored)
-        if config.changed_paths
+        if config.changed_paths is not None
         else iter_files(root, include_ignored=config.include_ignored)
     )
     for file_path in files:
