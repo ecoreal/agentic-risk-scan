@@ -97,6 +97,8 @@ agentic-risk-scan init-ci --report-artifact
 - Shell commands that interpolate `github.event.*` text from PRs, issues,
   comments, discussions, or manual inputs.
 - Secret and OIDC exposure in untrusted-trigger workflows.
+- Fail-open CI: verification, scan, or install steps that `continue-on-error`
+  past failures in untrusted-trigger workflows (`GHA009`).
 - Self-hosted runner use from untrusted triggers.
 - Prompt-injection phrases and hidden Unicode in `AGENTS.md`, `CLAUDE.md`,
   `.github/copilot-instructions.md`, `.cursor/rules/*`, agent-skill

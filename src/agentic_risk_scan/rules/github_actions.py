@@ -143,6 +143,32 @@ class GitHubActionsRule:
         permissions = detect_write_permissions(text)
         run_blocks = list(iter_run_blocks(text))
 
+        interrupted_checks = interrupted_check_steps(text)
+        if interrupted_checks and has_untrusted_trigger:
+            line_number, line_text = interrupted_checks[0]
+            findings.append(
+                make_finding(
+                    rule_id="GHA009",
+                    title="Set-up step can be silently skipped by continuing past failures",
+                    severity="medium",
+                    path=rel_path,
+                    line=line_number,
+                    message=(
+                        "A verification, lint, scan, or install step uses "
+                        "`continue-on-error: true`, so a failing set-up step does not "
+                        "stop the workflow. In an untrusted-trigger workflow, skipped "
+                        "hardening lets later steps act with an unverified environment."
+                    ),
+                    evidence=line_text,
+                    remediation=(
+                        "Remove `continue-on-error` from verification and set-up steps "
+                        "so failures stop the job, or split optional steps into a "
+                        "separate non-blocking job with read-only permissions."
+                    ),
+                    tags=("github-actions", "fail-open", "verification"),
+                )
+            )
+
         if "pull_request_target" in events and checkout_untrusted_head(text):
             line_match = first_line_matching(
                 text,
@@ -306,6 +332,60 @@ class GitHubActionsRule:
             )
 
         return dedupe(findings)
+
+
+# Word-boundary patterns, not substrings: "latest" contains "test" and
+# "checkout" contains "check". "setup" is intentionally absent because the
+# ubiquitous actions/setup-* steps are not the hazard this rule targets.
+FAIL_OPEN_STEP_PATTERNS = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\baudit\b",
+        r"\bcheck(?:s|er|er-)?\b",
+        r"\bexit[ -]code\b",
+        r"\bfail(?:s|ed|ure|ing)?\b",
+        r"\bgate\b",
+        r"\binstall(?:s|ed|ing|ation)?\b",
+        r"\blint(?:s|er|ing)?\b",
+        r"\bscan(?:s|ner|ning)?\b",
+        r"\btest(?:s|ed|ing)?\b",
+        r"\bvalidat(?:e|es|ed|ing|ion|or)\b",
+        r"\bverif(?:y|ies|ied|ication)\b",
+    )
+)
+
+
+def interrupted_check_steps(text: str) -> list[tuple[int, str]]:
+    """Steps that continue on error while looking like checks or set-up.
+
+    The rest of the scanner treats a job's exit code as the success signal;
+    a verification, scan, or install step marked ``continue-on-error: true``
+    silently removes that signal, letting later steps run against an
+    unverified environment. Each step block is examined as a whole so a
+    ``name:`` or ``run:`` line near ``continue-on-error`` still matches.
+    """
+    matches: list[tuple[int, str]] = []
+    block: list[tuple[int, str]] = []
+
+    def flush() -> None:
+        if not block:
+            return
+        block_text = "\n".join(line for _, line in block).lower()
+        continue_line = next(
+            (entry for entry in block if "continue-on-error:" in entry[1].lower()),
+            None,
+        )
+        if continue_line and re.search(r"continue-on-error:\s*(true|'true'|\"true\")", block_text):
+            if any(pattern.search(block_text) for pattern in FAIL_OPEN_STEP_PATTERNS):
+                matches.append(continue_line)
+
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        if re.match(r"^\s*-\s", line) and block and leading_spaces(line) <= leading_spaces(block[0][1]):
+            flush()
+            block = []
+        block.append((line_number, line))
+    flush()
+    return matches
 
 
 def unpinned_action_refs(text: str) -> list[tuple[int, str, str]]:

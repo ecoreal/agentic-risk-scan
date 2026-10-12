@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Added `GHA009`: verification, scan, lint, or install steps in an
+  untrusted-trigger workflow that set `continue-on-error: true` are flagged
+  (medium). A failing security scan or missing hardening step is silently
+  skipped, so later steps act on an unverified environment — the fail-open
+  pattern behind several "scanner silently did nothing" incidents.
 - Added `CFG015`: Claude Code settings that set `permissions.defaultMode` to
   `bypassPermissions` (high) or `acceptEdits` (medium) are flagged. A
   committed settings file flipping the default mode disables the interactive

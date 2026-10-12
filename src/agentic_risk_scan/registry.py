@@ -26,6 +26,7 @@ RULES: tuple[RuleInfo, ...] = (
     RuleInfo("GHA006", "high", "Untrusted trigger can reach a self-hosted runner", "GitHub Actions", ("github-actions", "runner")),
     RuleInfo("GHA007", "high", "OIDC token can be minted from untrusted workflow", "GitHub Actions", ("github-actions", "oidc", "cloud")),
     RuleInfo("GHA008", "low", "GitHub Action uses a mutable ref", "GitHub Actions", ("github-actions", "supply-chain", "pinning")),
+    RuleInfo("GHA009", "medium", "Verification or set-up step continues past failures", "GitHub Actions", ("github-actions", "fail-open", "verification")),
     RuleInfo("AGENT001", "high", "Bidirectional control character in agent instructions", "Agent Instructions", ("agent-instructions", "unicode")),
     RuleInfo("AGENT002", "medium", "Zero-width character in agent instructions", "Agent Instructions", ("agent-instructions", "unicode")),
     RuleInfo("AGENT003", "high", "Prompt-injection phrase in agent instructions", "Agent Instructions", ("agent-instructions", "prompt-injection")),
