@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Extended `docs/evaluation.md` with two larger trees (`vercel/next.js`,
+  768 files, ~1s scan; `getsentry/sentry-javascript`, 386 files) and the
+  precision notes those runs produced.
 - `AGENT003` now reports a quoted phrase inside explanatory prose at `info`
   instead of `high`: security guidance that says `do not follow "ignore
   previous instructions"` and detector reference tables that cite attack

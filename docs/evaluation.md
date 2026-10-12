@@ -28,6 +28,8 @@ the pattern is a real trade-off worth seeing before it is copied.
 | `langchain-ai/langchain-mcp-adapters` | 5 | 9 | GHA008×9 |
 | `github/github-mcp-server` | 19 | 7 | GHA002×3, GHA005×3, GHA009×1 |
 | `openai/openai-agents-python` | 73 | 3 | GHA005×1, GHA002×1, AGENT005×1 |
+| `vercel/next.js` | 768 | 26 | GHA005×8, GHA009×6, GHA004×3, PKG002×3, AGENT004×2, GHA007×2, GHA003×1, PKG004×1 |
+| `getsentry/sentry-javascript` | 386 | 157 | GHA008×137, AGENT003×15 (7 high, 8 info after mention handling), GHA005×2, AGENT004×1, AGENT002×1, PKG002×1 |
 
 67% of all findings are `GHA008` (mutable action refs, severity `low`), which
 is also why these repos pass their own CI: the default `--fail-on high`
@@ -35,6 +37,26 @@ threshold never blocks on unpinned refs. The remaining findings are
 concentrated in exactly the workflows that hand write authority to
 untrusted input — issue triggers on repos that use AI labelers and
 moderators.
+
+Scan time on the largest corpus (next.js, 768 files) is about one second,
+single-threaded.
+
+Three more precision observations from these two larger trees:
+
+- `getsentry/sentry-javascript` ships a `skill-scanner` with a reference file
+  that lists injection payloads as *examples to detect*. The scanner
+  reported those citations at `high` until quoted phrases inside explanatory
+  prose were treated as mentions (`info`), while raw payload lines stay
+  `high` — 8 findings moved, 0 payloads lost. A detector's reference
+  directory is the one place where attack strings are expected content.
+- `vercel/next.js`'s `GHA009` hits are mostly `continue-on-error` on
+  best-effort steps (benchmark uploads, PR comments) in `workflow_run`
+  chains. Each is a one-line review: keep, or don't. That is the intended
+  cost of the rule at `medium`.
+- The single `GHA003` on next.js is in a `push`-triggered deploy that also
+  carries `pull_request.head.sha` for manual dispatch reuse; the trigger
+  list is `push`, so this is an expression read, not shell injection from
+  PR content. Worth a look, not an alarm.
 
 ## What the findings actually mean
 
@@ -83,4 +105,4 @@ agentic-risk-scan scan /tmp/eval-repo --format markdown
 
 When quoting these numbers, pin the clone date: upstream workflow files
 change, and findings follow the files. Results above were measured on
-2026-10-12, with scanner version after commit `bd608fb`.
+2026-10-13, with scanner version after commit `4d35900`.
