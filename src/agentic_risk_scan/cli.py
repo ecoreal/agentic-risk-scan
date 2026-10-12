@@ -419,7 +419,7 @@ def run_scan(args: argparse.Namespace) -> int:
         exclude=tuple(project_config.exclude) + tuple(args.exclude),
         disabled_rules=tuple(project_config.disabled_rules) + tuple(args.disable_rule),
         inline_ignores=not args.no_inline_ignores,
-        changed_paths=tuple(changed_paths),
+        changed_paths=tuple(changed_paths) if args.changed or args.changed_from else None,
     )
     result = scan_path(path, config=config)
     result.findings = project_config.filter_findings(result.findings)
@@ -512,7 +512,7 @@ def run_report(args: argparse.Namespace) -> int:
         exclude=tuple(project_config.exclude) + tuple(args.exclude),
         disabled_rules=tuple(project_config.disabled_rules) + tuple(args.disable_rule),
         inline_ignores=not args.no_inline_ignores,
-        changed_paths=tuple(changed_paths),
+        changed_paths=tuple(changed_paths) if args.changed or args.changed_from else None,
     )
     scan_result = scan_path(path, config=config)
     scan_result.findings = project_config.filter_findings(scan_result.findings)

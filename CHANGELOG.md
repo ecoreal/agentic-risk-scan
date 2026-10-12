@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Fixed `--changed-from`/`--changed` scanning the entire repository when git
+  reported no changed files: an empty changed-file set was treated the same as
+  "no filter configured", so a PR with only unrelated changes (or only
+  deletions) scanned everything. `ScanConfig.changed_paths` now uses `None` for
+  "no path filter" and `()` for "nothing changed", with regression tests for the
+  empty-diff and deletions-only cases.
 - Added `MCP010`, `MCP011`, and `MCP012` for remote (HTTP/SSE) MCP servers:
   plaintext `http://` transport, link-local/cloud-metadata targets (SSRF against
   the instance metadata service), and committed secret headers such as a literal

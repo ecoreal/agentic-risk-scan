@@ -527,6 +527,68 @@ jobs:
             payload = json.loads(stdout)
             self.assertEqual({"AGENT005"}, {finding["rule_id"] for finding in payload["findings"]})
 
+    def test_changed_from_git_with_no_changes_does_not_scan_entire_repository(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run_git(root, "init", "-b", "main")
+            run_git(root, "config", "user.name", "test")
+            run_git(root, "config", "user.email", "test@example.invalid")
+            (root / "AGENTS.md").write_text("allowed-tools: *\n", encoding="utf-8")
+            run_git(root, "add", "AGENTS.md")
+            run_git(root, "commit", "-m", "instructions")
+
+            code, stdout, _ = capture_cli(
+                ["scan", str(root), "--changed-from", "HEAD", "--format", "json"]
+            )
+            self.assertEqual(0, code)
+            payload = json.loads(stdout)
+            self.assertEqual(0, payload["scanned_files"])
+            self.assertEqual([], payload["findings"])
+
+            code, report, _ = capture_cli(
+                ["report", str(root), "--changed-from", "HEAD", "--fail-on", "none"]
+            )
+            self.assertEqual(0, code)
+            self.assertIn("- Findings: `none`", report)
+            self.assertIn("- Attack surfaces: `none`", report)
+
+            code, stdout, _ = capture_cli(
+                ["scan", str(root), "--format", "json", "--fail-on", "none"]
+            )
+            self.assertEqual(0, code)
+            self.assertEqual(1, json.loads(stdout)["scanned_files"])
+
+    def test_changed_from_git_with_only_deletions_does_not_scan_entire_repository(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run_git(root, "init", "-b", "main")
+            run_git(root, "config", "user.name", "test")
+            run_git(root, "config", "user.email", "test@example.invalid")
+            (root / "AGENTS.md").write_text("allowed-tools: *\n", encoding="utf-8")
+            (root / "removed.txt").write_text("removed\n", encoding="utf-8")
+            run_git(root, "add", "AGENTS.md", "removed.txt")
+            run_git(root, "commit", "-m", "initial")
+            (root / "removed.txt").unlink()
+            run_git(root, "add", "-u")
+            run_git(root, "commit", "-m", "remove file")
+
+            code, stdout, _ = capture_cli(
+                [
+                    "scan",
+                    str(root),
+                    "--changed-from",
+                    "HEAD~1",
+                    "--format",
+                    "json",
+                    "--fail-on",
+                    "none",
+                ]
+            )
+            self.assertEqual(0, code)
+            payload = json.loads(stdout)
+            self.assertEqual(0, payload["scanned_files"])
+            self.assertEqual([], payload["findings"])
+
     def test_changed_from_git_does_not_resolve_repository_symlinks(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
