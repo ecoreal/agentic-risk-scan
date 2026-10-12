@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `GHA003` now treats `github.event.workflow_run.head_branch` and
+  `github.event.workflow_run.head_commit.message` as untrusted shell input.
+  For `workflow_run` chains the upstream run can originate from a fork, and
+  the consuming workflow usually holds write permissions, so interpolating
+  those fields into `run:` blocks is shell injection.
 - Added registry/doc sync tests: every rule in the shipped registry must be
   documented in `docs/rules.md` (and vice versa) with a matching anchor id, so
   the README-linked rule reference and per-finding help URIs cannot drift.

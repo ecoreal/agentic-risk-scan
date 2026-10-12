@@ -79,6 +79,11 @@ UNTRUSTED_EXPRESSIONS = (
     "github.event.discussion.title",
     "github.event.inputs",
     "github.head_ref",
+    # workflow_run chains: the completed run's metadata (branch/tag name and
+    # commit message) is attacker-controlled when the trigger run came from a
+    # fork, and `workflow_run` workflows usually hold write permissions.
+    "github.event.workflow_run.head_branch",
+    "github.event.workflow_run.head_commit.message",
 )
 
 ACTION_USE_RE = re.compile(

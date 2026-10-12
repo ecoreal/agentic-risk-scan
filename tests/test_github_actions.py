@@ -6,6 +6,36 @@ from agentic_risk_scan.scanner import scan_path
 
 
 class GitHubActionsRuleTests(unittest.TestCase):
+    def test_workflow_run_meta_interpolation_is_untrusted(self) -> None:
+        # A workflow_run chained workflow runs with write permissions, and the
+        # upstream run's branch name / commit message come from the fork.
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workflow = root / ".github" / "workflows" / "post.yml"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text(
+                """
+name: post-process
+on:
+  workflow_run:
+    workflows: ["ci"]
+    types: [completed]
+permissions:
+  contents: write
+jobs:
+  act:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "${{ github.event.workflow_run.head_branch }}" >> out.txt
+      - run: echo "${{ github.event.workflow_run.head_commit.message }}" >> out.txt
+""",
+                encoding="utf-8",
+            )
+
+            result = scan_path(root)
+            rule_ids = {finding.rule_id for finding in result.findings}
+            self.assertIn("GHA003", rule_ids)
+
     def test_detects_pull_request_target_head_checkout(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
