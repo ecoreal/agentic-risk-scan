@@ -5,6 +5,84 @@ import unittest
 from agentic_risk_scan.scanner import scan_path
 
 
+class TriggerDetectionTests(unittest.TestCase):
+    def _events(self, body: str) -> set[str]:
+        from agentic_risk_scan.rules.github_actions import detect_events
+
+        return detect_events(body)
+
+    def test_schedule_only_workflow_with_issues_permission_has_no_trigger(self) -> None:
+        # `issues: write` under permissions is not a trigger; previously the
+        # bare-line pattern fabricated an untrusted trigger for schedule-only
+        # workflows (found scanning modelcontextprotocol/servers).
+        events = self._events(
+            """
+name: sweep
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+permissions:
+  issues: write
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hi
+"""
+        )
+        self.assertEqual(set(), events)
+
+    def test_jobs_and_permissions_keys_are_not_events(self) -> None:
+        events = self._events(
+            """
+name: build
+on:
+  push:
+jobs:
+  permissions:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hi
+permissions:
+  contents: read
+"""
+        )
+        self.assertEqual(set(), events)
+
+    def test_real_untrusted_triggers_still_detected(self) -> None:
+        events = self._events(
+            """
+name: claude
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+jobs: {}
+"""
+        )
+        self.assertEqual({"issue_comment"}, events)
+
+    def test_inline_list_and_scalar_forms(self) -> None:
+        self.assertEqual({"pull_request"}, self._events("on: [pull_request, push]\njobs: {}\n"))
+        self.assertEqual({"pull_request"}, self._events("on: pull_request\njobs: {}\n"))
+        self.assertEqual({"issue_comment"}, self._events('on: "issue_comment"\njobs: {}\n'))
+
+    def test_nested_event_config_does_not_leak_other_events(self) -> None:
+        events = self._events(
+            """
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+  workflow_dispatch:
+jobs: {}
+"""
+        )
+        self.assertEqual({"pull_request"}, events)
+
+
 class FailOpenStepTests(unittest.TestCase):
     def _scan(self, body: str) -> set[str]:
         with TemporaryDirectory() as tmp:

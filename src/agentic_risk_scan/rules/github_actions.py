@@ -401,23 +401,48 @@ def unpinned_action_refs(text: str) -> list[tuple[int, str, str]]:
 
 
 def detect_events(text: str) -> set[str]:
+    """Trigger events, read structurally from the `on:` block only.
+
+    A bare ``name:``/``issues:`` line anywhere in the file is not a trigger:
+    ``permissions: {issues: write}`` and job keys like ``jobs:`` are common
+    and previously matched the line pattern, fabricating untrusted triggers
+    for workflows that run on ``schedule`` alone (verified against
+    modelcontextprotocol/servers and anthropics/claude-code-action).
+    """
     events: set[str] = set()
+    for event in _on_block_events(text):
+        if event in UNTRUSTED_EVENTS:
+            events.add(event)
+    return events
+
+
+def _on_block_events(text: str) -> list[str]:
     lines = text.splitlines()
-    for line in lines:
-        stripped = strip_comment(line).strip().strip("'\"")
-        inline = re.search(r"\bon:\s*\[(?P<events>[^\]]+)\]", stripped)
-        if inline:
-            for item in re.split(r"[, ]+", inline.group("events")):
-                event = item.strip("'\" ")
-                if event in UNTRUSTED_EVENTS:
-                    events.add(event)
-        match = re.match(r"^(?:-\s*)?(?P<event>[a-z_]+)\s*:", stripped)
-        if match and match.group("event") in UNTRUSTED_EVENTS:
-            events.add(match.group("event"))
-        if stripped.startswith("on:"):
-            for event in UNTRUSTED_EVENTS:
-                if re.search(rf"\b{re.escape(event)}\b", stripped):
-                    events.add(event)
+    header = next(
+        (index for index, line in enumerate(lines) if re.match(r"^(['\"]?on['\"]?)\s*:", line)),
+        None,
+    )
+    if header is None:
+        return []
+    on_line = lines[header]
+    after_colon = on_line.split(":", 1)[1].strip()
+    inline = re.fullmatch(r"\[(?P<events>[^\]]*)\]", after_colon)
+    if inline:
+        return [item.strip("'\" ") for item in inline.group("events").split(",") if item.strip()]
+    if after_colon and not after_colon.startswith("#"):
+        # `on: push` / `on: pull_request` scalar shorthand.
+        return [after_colon.strip("'\" ")]
+    base_indent = len(on_line) - len(on_line.lstrip())
+    events: list[str] = []
+    for line in lines[header + 1:]:
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        if indent <= base_indent:
+            break
+        match = re.match(r"^\s*-?\s*(?P<event>[A-Za-z_][A-Za-z0-9_-]*)\s*:", line)
+        if match:
+            events.append(match.group("event"))
     return events
 
 

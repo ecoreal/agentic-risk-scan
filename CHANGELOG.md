@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Fixed trigger detection fabricating untrusted events: any bare `name:`-like
+  line (`issues: write` under `permissions:`, a `jobs:` key) previously counted
+  as a trigger, so schedule-only workflows picked up `issues`/`pull_request`
+  and then tripped GHA002/GHA005/GHA009. Triggers are now read structurally
+  from the `on:` block only (mapping, inline list, and scalar forms).
+  Measured on modelcontextprotocol/servers + anthropics/claude-code-action
+  (25 workflows): 3 files had spurious untrusted triggers before, 0 after,
+  with no missed real triggers. Regression tests pin both directions.
 - Added `GHA009`: verification, scan, lint, or install steps in an
   untrusted-trigger workflow that set `continue-on-error: true` are flagged
   (medium). A failing security scan or missing hardening step is silently
