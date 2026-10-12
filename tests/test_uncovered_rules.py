@@ -1,8 +1,10 @@
-"""Direct coverage for rules that previously had no dedicated test.
+"""Direct coverage for rules and detection paths that started without a test.
 
 Each fixture was verified to fire exactly the intended rule id before being
-committed here. Rules covered: AGENT002, CFG000, GHA004, GHA005, GHA006,
-GHA007, GHA008, MCP000, MCP003, MCP004, MCP005, MCP006, MCP008, PKG002.
+committed here. Covers the originally untested rules (AGENT002, CFG000,
+GHA004-GHA008, MCP000, MCP003-MCP006, MCP008, PKG002), the later rule
+additions (AGENT003 variants, CFG015, skill-instruction scanning), and the
+mention-vs-payload severity split for quoted injection phrases.
 """
 
 from pathlib import Path
