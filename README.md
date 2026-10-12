@@ -22,6 +22,7 @@ Read the deeper context:
 - [Research notes](docs/research.md)
 - [Project brief](docs/project-brief.md)
 - [Threat model](docs/threat-model.md)
+- [Evaluation corpus](docs/evaluation.md)
 - [Reporting guide](docs/reporting.md)
 - [Adoption guide](docs/adoption.md)
 - [Releasing guide](docs/releasing.md)
@@ -340,6 +341,8 @@ branch before using `--changed-from origin/main`.
 
 See [docs/rules.md](docs/rules.md) for the rule reference.
 See [docs/threat-model.md](docs/threat-model.md) for the scanner threat model.
+See [docs/evaluation.md](docs/evaluation.md) for measured results on real
+repositories.
 
 ## Inventory Mode
 

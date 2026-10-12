@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Added `docs/evaluation.md`: measured scan results for five real, maintainer-
+  run repositories (official MCP servers, claude-code-action, GitHub's MCP
+  server, LangChain MCP adapters, OpenAI agents SDK), with the review context
+  for each non-low finding. The corpus also documents the trigger-detection
+  false-positive class it caught before release.
 - Fixed trigger detection fabricating untrusted events: any bare `name:`-like
   line (`issues: write` under `permissions:`, a `jobs:` key) previously counted
   as a trigger, so schedule-only workflows picked up `issues`/`pull_request`
