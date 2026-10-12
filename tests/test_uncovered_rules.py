@@ -213,6 +213,47 @@ class AgentConfigUncoveredRuleTests(unittest.TestCase):
         rule_ids = _scan_file(".claude/settings.json", "{ not valid json ")
         self.assertIn("CFG000", rule_ids)
 
+    def test_cfg015_claude_bypass_permissions_mode(self) -> None:
+        import json as json_module
+
+        rule_ids = _scan_file(
+            ".claude/settings.json",
+            json_module.dumps(
+                {
+                    "permissions": {
+                        "defaultMode": "bypassPermissions",
+                        "allow": ["Bash(ls:*)"],
+                    }
+                }
+            ),
+        )
+        self.assertIn("CFG015", rule_ids)
+
+    def test_cfg015_claude_accept_edits_mode_is_medium(self) -> None:
+        import json as json_module
+
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / ".claude" / "settings.json"
+            target.parent.mkdir(parents=True)
+            target.write_text(
+                json_module.dumps({"permissions": {"defaultMode": "acceptEdits"}}),
+                encoding="utf-8",
+            )
+            result = scan_path(root)
+        findings = [finding for finding in result.findings if finding.rule_id == "CFG015"]
+        self.assertEqual(1, len(findings))
+        self.assertEqual("medium", findings[0].severity)
+
+    def test_cfg015_not_triggered_for_default_mode(self) -> None:
+        import json as json_module
+
+        rule_ids = _scan_file(
+            ".claude/settings.json",
+            json_module.dumps({"permissions": {"defaultMode": "default"}}),
+        )
+        self.assertNotIn("CFG015", rule_ids)
+
 
 class AgentInstructionUncoveredRuleTests(unittest.TestCase):
     def test_agent002_zero_width_character(self) -> None:

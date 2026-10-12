@@ -53,6 +53,7 @@ agentic-risk-scan rules --format markdown
 | <a id="cfg012"></a>`CFG012` | high | Agent configuration stores literal secret-like value. |
 | <a id="cfg013"></a>`CFG013` | medium | Agent configuration weakens secret redaction. |
 | <a id="cfg014"></a>`CFG014` | medium | Gemini automatic or persistent tool approval is enabled. |
+| <a id="cfg015"></a>`CFG015` | medium/high | Claude settings disable interactive permission checks (`permissions.defaultMode` of `bypassPermissions`/`acceptEdits`). |
 
 ## MCP
 

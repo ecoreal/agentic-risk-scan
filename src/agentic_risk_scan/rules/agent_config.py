@@ -110,6 +110,28 @@ def scan_json_agent_settings(rel_path: Path, text: str, *, ecosystem: str) -> li
             allow = [allow]
         if isinstance(allow, list):
             findings.extend(scan_allowed_tools(rel_path, text, ecosystem, [str(item) for item in allow]))
+    if ecosystem == "Claude Code" and isinstance(permissions, dict):
+        mode = permissions.get("defaultMode")
+        if isinstance(mode, str) and mode in {"bypassPermissions", "acceptEdits"}:
+            findings.append(
+                make_finding(
+                    rule_id="CFG015",
+                    title="Claude settings disable interactive permission checks",
+                    severity="high" if mode == "bypassPermissions" else "medium",
+                    path=rel_path,
+                    line=find_key_line(text, "defaultMode") or find_key_line(text, "permissions"),
+                    message=(
+                        "permissions.defaultMode bypasses the interactive permission prompts; "
+                        "a committed settings file should not weaken review for every contributor."
+                    ),
+                    evidence=f"defaultMode={mode}",
+                    remediation=(
+                        "Keep interactive permission checks on in committed settings and let "
+                        "individuals opt out locally instead."
+                    ),
+                    tags=("agent-config", "permissions", "approval"),
+                )
+            )
 
     findings.extend(scan_hook_commands(rel_path, text, ecosystem, data))
 

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added `CFG015`: Claude Code settings that set `permissions.defaultMode` to
+  `bypassPermissions` (high) or `acceptEdits` (medium) are flagged. A
+  committed settings file flipping the default mode disables the interactive
+  permission prompts for every contributor checking out the repository.
 - Added an HTML-report escaping regression test: scanned paths (attacker-
   influencable via directory/file names in a PR) are HTML-escaped before
   they reach the report markup, and the test pins that behavior.

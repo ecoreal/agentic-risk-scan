@@ -104,8 +104,9 @@ agentic-risk-scan init-ci --report-artifact
   similar files.
 - Risky committed agent client settings in `.claude/settings.json`,
   `.codex/config.toml`, and `.gemini/settings.json`, including broad tool
-  grants, disabled approvals, full-access permission profiles, literal
-  secret-like values, and secret-redaction bypasses.
+  grants, disabled approvals, full-access permission profiles, bypassed
+  permission prompts (`permissions.defaultMode`), literal secret-like
+  values, and secret-redaction bypasses.
 - MCP servers launched through shell wrappers, runtime downloads, unpinned `npx`,
   broad runtime flags, temporary paths, inline secret-like values, or
   code-injecting environment variables (`NODE_OPTIONS`, `LD_PRELOAD`, `PYTHONPATH`).

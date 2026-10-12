@@ -46,6 +46,7 @@ RULES: tuple[RuleInfo, ...] = (
     RuleInfo("CFG012", "high", "Agent configuration stores literal secret-like value", "Agent Config", ("agent-config", "secrets")),
     RuleInfo("CFG013", "medium", "Agent configuration weakens secret redaction", "Agent Config", ("agent-config", "secrets", "redaction")),
     RuleInfo("CFG014", "medium", "Gemini automatic or persistent tool approval is enabled", "Agent Config", ("agent-config", "gemini", "approval")),
+    RuleInfo("CFG015", "medium/high", "Claude settings disable interactive permission checks", "Agent Config", ("agent-config", "permissions", "approval")),
     RuleInfo("MCP000", "low", "MCP config is invalid JSON", "MCP", ("mcp", "json")),
     RuleInfo("MCP001", "high", "MCP server starts through a shell wrapper", "MCP", ("mcp", "shell")),
     RuleInfo("MCP002", "high", "MCP server uses download-and-execute bootstrap", "MCP", ("mcp", "supply-chain")),
