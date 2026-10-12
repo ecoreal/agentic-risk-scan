@@ -20,7 +20,11 @@ LIFECYCLE_SCRIPTS = {
 
 DANGEROUS_SCRIPT_PATTERNS = (
     re.compile(r"\b(curl|wget)\b.+\|\s*(sh|bash|zsh|node|python)\b", re.I),
-    re.compile(r"\b(eval|exec)\b", re.I),
+    # \b treats the hyphen in "skill-eval.mjs" or "exec:build" prefixes as a
+    # boundary; require that eval/exec is a standalone token so script file
+    # names are not flagged (found scanning modelcontextprotocol/inspector's
+    # package.json).
+    re.compile(r"(?<![\w-])(eval|exec)(?![\w-])", re.I),
     re.compile(r"\bbase64\s+(-d|--decode)\b.+\|\s*(sh|bash|node|python)\b", re.I),
     re.compile(r"\b(node|python|python3|ruby|perl)\s+-e\s+", re.I),
     re.compile(r"\brm\s+-rf\s+(/|\$HOME|~|\*)", re.I),

@@ -209,6 +209,22 @@ class PackageScriptUncoveredRuleTests(unittest.TestCase):
         )
         self.assertIn("PKG002", rule_ids)
 
+    def test_pkg002_ignores_eval_inside_script_file_names(self) -> None:
+        # `\b` treated the hyphen in "skill-eval.mjs" as a word boundary and
+        # flagged a plain file name (found scanning modelcontextprotocol/
+        # inspector's package.json).
+        rule_ids = _scan_file(
+            "package.json",
+            """
+{
+  "scripts": {
+    "skills:eval": "node scripts/skill-eval.mjs"
+  }
+}
+""",
+        )
+        self.assertNotIn("PKG002", rule_ids)
+
 
 class AgentConfigUncoveredRuleTests(unittest.TestCase):
     def test_cfg000_invalid_json_settings(self) -> None:

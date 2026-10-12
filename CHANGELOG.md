@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `PKG002` no longer flags `eval`/`exec` when they appear inside script file
+  names: the `\b` boundary treated the hyphen in `skill-eval.mjs` as a word
+  boundary (found scanning `modelcontextprotocol/inspector`'s package.json,
+  2 false positives). Standalone `eval`/`exec` commands still flag.
 - Extended `docs/evaluation.md` with two larger trees (`vercel/next.js`,
   768 files, ~1s scan; `getsentry/sentry-javascript`, 386 files) and the
   precision notes those runs produced.
