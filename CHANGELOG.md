@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Corrected the `CFG006` message: `security.toolSandboxing` defaults to
+  `false` in Gemini CLI upstream, so an explicit `false` is a documented
+  decision, not a hidden weakening. The finding now says that and points to
+  enabling it as the hardening action (verified against gemini-cli's
+  `docs/cli/sandbox.md` settings reference).
 - Added `docs/evaluation.md`: measured scan results for five real, maintainer-
   run repositories (official MCP servers, claude-code-action, GitHub's MCP
   server, LangChain MCP adapters, OpenAI agents SDK), with the review context

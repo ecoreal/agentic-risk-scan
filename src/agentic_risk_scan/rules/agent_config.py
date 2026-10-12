@@ -260,9 +260,17 @@ def scan_gemini_settings(rel_path: Path, text: str, data: Any) -> list[Finding]:
                 severity="medium",
                 path=rel_path,
                 line=find_key_line(text, "toolSandboxing") or find_key_line(text, "sandbox"),
-                message="Gemini CLI settings appear to disable tool sandboxing.",
+                message=(
+                    "Gemini CLI settings explicitly disable tool sandboxing. Upstream's "
+                    "default is also `false`; write `true` where the environment supports "
+                    "it, and treat an explicit `false` in committed settings as a "
+                    "documented decision rather than an oversight."
+                ),
                 evidence="toolSandboxing=false",
-                remediation="Keep tool sandboxing enabled unless there is a documented compensating control.",
+                remediation=(
+                    "Enable tool sandboxing (security.toolSandboxing) unless there is a "
+                    "documented compensating control."
+                ),
                 tags=("agent-config", "sandbox"),
             )
         )
