@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added registry/doc sync tests: every rule in the shipped registry must be
+  documented in `docs/rules.md` (and vice versa) with a matching anchor id, so
+  the README-linked rule reference and per-finding help URIs cannot drift.
 - Agent-skill instruction files are now scanned: `AGENT001`-`AGENT005` apply
   to `.claude/skills/**/SKILL.md` and `skills/**/SKILL.md` in addition to the
   existing instruction basenames and markers. Skills are a common distribution
