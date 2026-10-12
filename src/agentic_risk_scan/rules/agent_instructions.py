@@ -53,8 +53,19 @@ ZERO_WIDTH_CHARS = {
 }
 
 PROMPT_INJECTION_PATTERNS = (
-    re.compile(r"\bignore\s+(all|any|previous|above|earlier)\s+instructions\b", re.I),
-    re.compile(r"\bdisregard\s+(all|any|previous|above|earlier)\s+instructions\b", re.I),
+    # "ignore previous instructions" is the canonical payload; real-world
+    # variants insert an article ("ignore the previous instructions", "ignore
+    # all the above instructions") and must match too.
+    re.compile(
+        r"\bignore\s+(?:(?:all|any)\s+)?(?:(?:the|these|those)\s+)?"
+        r"(?:previous|above|earlier|prior|preceding)\s+instructions\b",
+        re.I,
+    ),
+    re.compile(
+        r"\bdisregard\s+(?:(?:all|any)\s+)?(?:(?:the|these|those)\s+)?"
+        r"(?:previous|above|earlier|prior|preceding)\s+instructions\b",
+        re.I,
+    ),
     re.compile(r"\boverride\s+(the\s+)?(system|developer)\s+(prompt|message|instructions)\b", re.I),
     re.compile(r"\breveal\s+(the\s+)?(system\s+prompt|developer\s+message|hidden\s+instructions)\b", re.I),
     re.compile(r"\b(exfiltrate|steal|leak)\b.*\b(secret|token|credential|api key|prompt)\b", re.I),

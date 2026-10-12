@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `AGENT003` now matches real-world override phrasing that inserts an article,
+  e.g. "ignore the previous instructions" (previously only the article-less
+  "ignore previous instructions" matched), and the adjective list gained
+  `prior`/`preceding`. Regression tests cover the article variants for both
+  `ignore` and `disregard`.
 - Fixed `--changed-from`/`--changed` scanning the entire repository when git
   reported no changed files: an empty changed-file set was treated the same as
   "no filter configured", so a PR with only unrelated changes (or only
