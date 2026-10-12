@@ -398,6 +398,21 @@ jobs:
             self.assertIn("<!doctype html>", stdout)
             self.assertIn("<title>Agentic Risk Report</title>", stdout)
             self.assertIn("severity-medium", stdout)
+
+    def test_report_html_escapes_untrusted_paths(self) -> None:
+        # Scanned paths are attacker-influenced (a PR can add any directory
+        # name) and the HTML report renders them; they must never be echoed
+        # raw into markup.
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp) / "repo&inject"
+            root.mkdir()
+            (root / "AGENTS.md").write_text("allowed-tools: *\n", encoding="utf-8")
+
+            code, stdout, _ = capture_cli(["report", str(root), "--format", "html", "--fail-on", "none"])
+
+            self.assertEqual(0, code)
+            self.assertIn("repo&amp;inject", stdout)
+            self.assertNotIn("repo&inject", stdout)
             self.assertIn("AGENT005", stdout)
             self.assertIn("Attack Surface Inventory", stdout)
 

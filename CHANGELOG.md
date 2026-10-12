@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added an HTML-report escaping regression test: scanned paths (attacker-
+  influencable via directory/file names in a PR) are HTML-escaped before
+  they reach the report markup, and the test pins that behavior.
 - `GHA003` now treats `github.event.workflow_run.head_branch` and
   `github.event.workflow_run.head_commit.message` as untrusted shell input.
   For `workflow_run` chains the upstream run can originate from a fork, and
