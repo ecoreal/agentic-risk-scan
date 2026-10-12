@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Agent-skill instruction files are now scanned: `AGENT001`-`AGENT005` apply
+  to `.claude/skills/**/SKILL.md` and `skills/**/SKILL.md` in addition to the
+  existing instruction basenames and markers. Skills are a common distribution
+  vector for hidden-Unicode, injection phrasing, and download-and-execute
+  instructions (compare `mcp-scan`, which scans MCP servers and skills).
 - `AGENT003` now matches real-world override phrasing that inserts an article,
   e.g. "ignore the previous instructions" (previously only the article-less
   "ignore previous instructions" matched), and the adjective list gained

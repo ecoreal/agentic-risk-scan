@@ -30,6 +30,9 @@ INSTRUCTION_PATH_MARKERS = (
     ".claude/",
     ".codex/skills/",
     ".codex/prompts/",
+    # Agent Skills packaging: instructions distributed as a skill directory.
+    ".claude/skills/",
+    "skills/",
 )
 
 BIDI_CHARS = {

@@ -99,7 +99,9 @@ agentic-risk-scan init-ci --report-artifact
 - Secret and OIDC exposure in untrusted-trigger workflows.
 - Self-hosted runner use from untrusted triggers.
 - Prompt-injection phrases and hidden Unicode in `AGENTS.md`, `CLAUDE.md`,
-  `.github/copilot-instructions.md`, `.cursor/rules/*`, and similar files.
+  `.github/copilot-instructions.md`, `.cursor/rules/*`, agent-skill
+  instructions (`.claude/skills/**/SKILL.md`, `skills/**/SKILL.md`), and
+  similar files.
 - Risky committed agent client settings in `.claude/settings.json`,
   `.codex/config.toml`, and `.gemini/settings.json`, including broad tool
   grants, disabled approvals, full-access permission profiles, literal
