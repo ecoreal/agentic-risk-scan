@@ -1,10 +1,14 @@
 name: Agentic Risk Scan
 description: Scan GitHub Actions, MCP configs, and agent instruction files for AI-agent security risks.
 author: Agentic Risk Scan Contributors
+branding:
+  # Rendered in the Actions sidebar and the Marketplace listing.
+  icon: "shield"
+  color: "red"
 
 inputs:
   command:
-    description: Command to run: scan, report, or inventory.
+    description: "Command to run: scan, report, or inventory."
     required: false
     default: "scan"
   path:

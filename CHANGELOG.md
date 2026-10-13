@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The composite Action now carries Marketplace `branding` (shield icon) and
+  its metadata is strict-YAML valid: an unquoted colon in the `command`
+  input description broke strict parsers even though GitHub's loader
+  tolerated it. A test now pins branding and parseability.
 - SARIF output now declares the full shipped rule taxonomy in
   `tool.driver.rules` (all 47 rules with help URIs and `security-severity`),
   not only the rules that fired, matching what GitHub code scanning expects

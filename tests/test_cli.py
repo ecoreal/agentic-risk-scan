@@ -513,6 +513,21 @@ jobs:
         self.assertIn('format="html"', text)
         self.assertIn('output="agentic-risk-report.html"', text)
 
+    def test_composite_action_is_valid_marketplace_metadata(self) -> None:
+        # The repo doubles as a GitHub Action; the file must parse as YAML
+        # (an unquoted colon in a description silently breaks strict parsers)
+        # and carry the branding the Marketplace listing renders.
+        import yaml
+
+        action = Path(__file__).resolve().parents[1] / "action.yml"
+        data = yaml.safe_load(action.read_text(encoding="utf-8"))
+
+        self.assertEqual("composite", data["runs"]["using"])
+        self.assertIn("branding", data)
+        self.assertTrue(data["branding"]["icon"])
+        self.assertTrue(data["branding"]["color"])
+        self.assertIsInstance(data["inputs"]["command"]["description"], str)
+
     def test_changed_only_scans_selected_paths(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
