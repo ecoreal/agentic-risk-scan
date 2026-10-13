@@ -517,13 +517,23 @@ jobs:
         # The repo doubles as a GitHub Action; the file must parse as YAML
         # (an unquoted colon in a description silently breaks strict parsers)
         # and carry the branding the Marketplace listing renders.
-        import yaml
-
         action = Path(__file__).resolve().parents[1] / "action.yml"
-        data = yaml.safe_load(action.read_text(encoding="utf-8"))
+        text = action.read_text(encoding="utf-8")
 
+        # String-level checks run everywhere (the test suite is
+        # dependency-free, and CI has no PyYAML).
+        self.assertIn("branding:", text)
+        self.assertRegex(text, r'icon:\s*"\w+"')
+        self.assertRegex(text, r'color:\s*"[a-z]+"')
+        # The one description containing a colon must be quoted.
+        self.assertIn('description: "Command to run: scan, report, or inventory."', text)
+
+        try:
+            import yaml
+        except ImportError:
+            self.skipTest("PyYAML not installed; string-level checks already ran")
+        data = yaml.safe_load(text)
         self.assertEqual("composite", data["runs"]["using"])
-        self.assertIn("branding", data)
         self.assertTrue(data["branding"]["icon"])
         self.assertTrue(data["branding"]["color"])
         self.assertIsInstance(data["inputs"]["command"]["description"], str)
