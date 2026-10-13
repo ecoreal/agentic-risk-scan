@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .models import Finding, ScanResult, SEVERITY_ORDER
-from .registry import RULE_BY_ID
+from .registry import RULES, RULE_BY_ID, RuleInfo
 
 
 def render(result: ScanResult, *, fmt: str) -> str:
@@ -111,11 +111,12 @@ def render_markdown(result: ScanResult) -> str:
 
 
 def render_sarif(result: ScanResult) -> str:
-    rules = {}
-    sarif_results = []
-    for finding in result.sorted_findings():
-        rules[finding.rule_id] = sarif_rule(finding)
-        sarif_results.append(sarif_result(finding))
+    # Declare the full shipped rule taxonomy, not just the rules that fired:
+    # GitHub code scanning keys the Security-tab rule list and help links off
+    # driver.rules, and a stable taxonomy keeps successive SARIF uploads
+    # attributable to the same rule ids.
+    rules = {rule.rule_id: sarif_rule_from_registry(rule) for rule in RULES}
+    sarif_results = [sarif_result(finding) for finding in result.sorted_findings()]
     payload: dict[str, Any] = {
         "version": "2.1.0",
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
@@ -135,18 +136,17 @@ def render_sarif(result: ScanResult) -> str:
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
 
-def sarif_rule(finding: Finding) -> dict[str, Any]:
-    rule = RULE_BY_ID.get(finding.rule_id)
+def sarif_rule_from_registry(rule: RuleInfo) -> dict[str, Any]:
     return {
-        "id": finding.rule_id,
-        "name": finding.title,
-        "shortDescription": {"text": finding.title},
-        "fullDescription": {"text": finding.message},
-        "helpUri": rule.help_uri if rule else "https://github.com/ecoreal/agentic-risk-scan/blob/main/docs/rules.md",
-        "help": {"text": finding.remediation or finding.message},
+        "id": rule.rule_id,
+        "name": rule.title,
+        "shortDescription": {"text": rule.title},
+        "fullDescription": {"text": f"{rule.category}: {rule.title}"},
+        "helpUri": rule.help_uri,
+        "help": {"text": f"See {rule.help_uri} for remediation guidance."},
         "properties": {
-            "tags": list(finding.tags),
-            "security-severity": str(security_severity(finding.severity)),
+            "tags": list(rule.tags),
+            "security-severity": str(security_severity(rule.severity)),
         },
     }
 
@@ -184,13 +184,19 @@ def sarif_level(severity: str) -> str:
 
 
 def security_severity(severity: str) -> float:
-    return {
-        "critical": 9.5,
-        "high": 8.0,
-        "medium": 5.5,
-        "low": 2.5,
-        "info": 0.5,
-    }[severity]
+    # Registry severities can be ranges like "medium/high"; GitHub's scale
+    # wants one number, so take the upper bound.
+    parts = str(severity).split("/")
+    return max(_SECURITY_SEVERITY_SCALE.get(part, 0.0) for part in parts)
+
+
+_SECURITY_SEVERITY_SCALE = {
+    "critical": 9.5,
+    "high": 8.0,
+    "medium": 5.5,
+    "low": 2.5,
+    "info": 0.5,
+}
 
 
 def render_github_annotations(result: ScanResult) -> str:

@@ -399,6 +399,38 @@ jobs:
             self.assertIn("<title>Agentic Risk Report</title>", stdout)
             self.assertIn("severity-medium", stdout)
 
+    def test_sarif_declares_the_full_rule_taxonomy(self) -> None:
+        # GitHub code scanning keys the Security tab and rule help links off
+        # tool.driver.rules; every shipped rule must be declared, not only
+        # the rules that fired.
+        from agentic_risk_scan.registry import RULES
+
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "AGENTS.md").write_text("allowed-tools: *\n", encoding="utf-8")
+
+            code, stdout, _ = capture_cli(["scan", str(root), "--format", "sarif", "--fail-on", "none"])
+
+            self.assertEqual(0, code)
+            payload = json.loads(stdout)
+            driver_ids = {rule["id"] for rule in payload["runs"][0]["tool"]["driver"]["rules"]}
+            self.assertEqual({rule.rule_id for rule in RULES}, driver_ids)
+
+            result_ids = {result["ruleId"] for result in payload["runs"][0]["results"]}
+            self.assertTrue(result_ids <= driver_ids)
+            for rule in payload["runs"][0]["tool"]["driver"]["rules"]:
+                self.assertEqual("2.1.0", payload["version"])
+                self.assertIn("security-severity", rule["properties"])
+                self.assertTrue(rule["helpUri"])
+
+    def test_sarif_range_severity_takes_the_upper_bound(self) -> None:
+        from agentic_risk_scan.reporters import security_severity
+
+        # GHA005 is registered as "medium/high"; GitHub wants one number.
+        self.assertEqual(8.0, security_severity("medium/high"))
+        self.assertEqual(5.5, security_severity("medium"))
+        self.assertEqual(9.5, security_severity("critical"))
+
     def test_report_html_escapes_untrusted_paths(self) -> None:
         # Scanned paths are attacker-influenced (a PR can add any directory
         # name) and the HTML report renders them; they must never be echoed

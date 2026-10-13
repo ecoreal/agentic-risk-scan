@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- SARIF output now declares the full shipped rule taxonomy in
+  `tool.driver.rules` (all 47 rules with help URIs and `security-severity`),
+  not only the rules that fired, matching what GitHub code scanning expects
+  for the Security-tab rule list and help links. Range severities like
+  `medium/high` resolve to their upper bound on GitHub's 0-10 scale.
+  Verified against the official SARIF 2.1.0 schema.
 - Scoped `GHA004`'s dangerous-shell arms: `--exec` flags and package-runner
   subcommands (`pnpm exec turbo build`) no longer count as shell `exec`
   builtins, and inline interpreter scripts (`node -e ...`) only flag when
