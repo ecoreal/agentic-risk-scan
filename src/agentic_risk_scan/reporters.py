@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .models import Finding, ScanResult, SEVERITY_ORDER
-from .registry import RULES, RULE_BY_ID, RuleInfo
+from .registry import RULES, RuleInfo
 
 
 def render(result: ScanResult, *, fmt: str) -> str:
