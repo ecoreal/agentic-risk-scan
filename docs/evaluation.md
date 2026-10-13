@@ -28,7 +28,7 @@ the pattern is a real trade-off worth seeing before it is copied.
 | `langchain-ai/langchain-mcp-adapters` | 5 | 9 | GHA008×9 |
 | `github/github-mcp-server` | 19 | 7 | GHA002×3, GHA005×3, GHA009×1 |
 | `openai/openai-agents-python` | 73 | 3 | GHA005×1, GHA002×1, AGENT005×1 |
-| `vercel/next.js` | 768 | 26 | GHA005×8, GHA009×6, GHA004×3, PKG002×3, AGENT004×2, GHA007×2, GHA003×1, PKG004×1 |
+| `vercel/next.js` | 768 | 22 (was 26) | GHA005×8, GHA009×6, AGENT004×2, GHA007×2, GHA004×1, GHA003×1, PKG004×1 |
 | `getsentry/sentry-javascript` | 386 | 157 | GHA008×137, AGENT003×15 (7 high, 8 info after mention handling), GHA005×2, AGENT004×1, AGENT002×1, PKG002×1 |
 
 67% of all findings are `GHA008` (mutable action refs, severity `low`), which
@@ -105,4 +105,9 @@ agentic-risk-scan scan /tmp/eval-repo --format markdown
 
 When quoting these numbers, pin the clone date: upstream workflow files
 change, and findings follow the files. Results above were measured on
-2026-10-13, with scanner version after commit `4d35900`.
+2026-10-13, with scanner version after commit `c3cb84b`. Cross-scan history
+of precision fixes driven by this corpus: trigger detection rewritten
+(3 spurious triggers removed), `PKG002` script-file-name false positives
+(inspector 15 -> 13), `AGENT003` quoted-mention severity (sentry: 8 moved
+high -> info), and `GHA004` scoping for `--exec` flags / package-runner
+subcommands / static inline scripts (next.js 26 -> 22, ai-toolbox 1 -> 0).
