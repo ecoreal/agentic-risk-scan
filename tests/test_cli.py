@@ -26,6 +26,31 @@ def capture_cli(args: list[str]) -> tuple[int, str, str]:
     return code, stdout.getvalue(), stderr.getvalue()
 
 
+class VersionTests(unittest.TestCase):
+    def test_package_version_is_single_sourced(self) -> None:
+        # pyproject declares dynamic = ["version"] pointing at
+        # agentic_risk_scan.__version__; the CLI prints the same value.
+        from agentic_risk_scan import __version__
+
+        project = Path(__file__).resolve().parents[1] / "pyproject.toml"
+        text = project.read_text(encoding="utf-8")
+        self.assertIn('dynamic = ["version"]', text)
+        self.assertNotIn('version = "0.', text.split("[project]")[1].split("[tool")[0])
+        self.assertRegex(__version__, r"^\d+\.\d+\.\d+$")
+
+    def test_cli_version_flag_reports_the_package_version(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+
+        stdout = io.StringIO()
+        with self.assertRaises(SystemExit) as context, redirect_stdout(stdout):
+            main(["--version"])
+        self.assertEqual(0, context.exception.code)
+        from agentic_risk_scan import __version__
+
+        self.assertIn(__version__, stdout.getvalue())
+
+
 class CLITests(unittest.TestCase):
     def test_scan_does_not_follow_file_symlinks_outside_root(self) -> None:
         with TemporaryDirectory() as tmp:

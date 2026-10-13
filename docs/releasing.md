@@ -26,8 +26,11 @@ token during the run.
 
 ## Cutting a Release
 
-1. Update `version` in `pyproject.toml`.
-2. Add a matching section to `CHANGELOG.md`.
+1. Bump `__version__` in `src/agentic_risk_scan/__init__.py`. The version is
+   single-sourced: `pyproject.toml` declares `dynamic = ["version"]` pointing
+   at that attribute, so the wheel metadata and `--version` both follow it.
+2. Move the `Unreleased` CHANGELOG entries under a new version heading with
+   the release date.
 3. Verify the build locally in a throwaway environment (never install build
    tooling into the project's runtime environment):
 

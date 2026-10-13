@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.11.0 - 2026-10-13
+
+### Added
+
 - The composite Action now carries Marketplace `branding` (shield icon) and
   its metadata is strict-YAML valid: an unquoted colon in the `command`
   input description broke strict parsers even though GitHub's loader
@@ -12,55 +16,11 @@
   for the Security-tab rule list and help links. Range severities like
   `medium/high` resolve to their upper bound on GitHub's 0-10 scale.
   Verified against the official SARIF 2.1.0 schema.
-- Scoped `GHA004`'s dangerous-shell arms: `--exec` flags and package-runner
-  subcommands (`pnpm exec turbo build`) no longer count as shell `exec`
-  builtins, and inline interpreter scripts (`node -e ...`) only flag when
-  the script consumes an attacker-influencable input sink
-  (argv/stdin/env/child_process/...). A fixed
-  `node -e "JSON.parse(readFileSync('manifest.json'))"` validation step is
-  common CI and no longer a finding. Measured on next.js (3 GHA004 -> 1),
-  ai-toolbox (1 -> 0), each case pinned by tests.
-- Two agent-instruction precision fixes, both found by cross-scanning the
-  author's own workspace: `AGENT005` treated the opening `**` of markdown
-  bold (`Recommended tools: **Figma**`) as a `*` tool grant, and `AGENT003`
-  flagged benign prose where `leak` met the bare word `prompt` (`prompts
-  leak into training`). Wildcards now require a value boundary
-  (end/whitespace/comment) and not a preceding `*`; the leak pattern
-  requires a secret-like object, with `system prompt` / `hidden
-  instructions` covering the real payload cases. Each direction pinned by
-  tests; rigor's tree goes from 2 findings to 0.
-- `PKG002` no longer flags `eval`/`exec` when they appear inside script file
-  names: the `\b` boundary treated the hyphen in `skill-eval.mjs` as a word
-  boundary (found scanning `modelcontextprotocol/inspector`'s package.json,
-  2 false positives). Standalone `eval`/`exec` commands still flag.
-- Extended `docs/evaluation.md` with two larger trees (`vercel/next.js`,
-  768 files, ~1s scan; `getsentry/sentry-javascript`, 386 files) and the
-  precision notes those runs produced.
-- `AGENT003` now reports a quoted phrase inside explanatory prose at `info`
-  instead of `high`: security guidance that says `do not follow "ignore
-  previous instructions"` and detector reference tables that cite attack
-  strings are mentions, not payloads. Raw unquoted payload lines and
-  phrase-only quoted lines stay `high`. Measured on getsentry/sentry-
-  javascript's `.agents/skills` tree: 8 high downgraded to info, 0 raw
-  payloads downgraded (each case pinned by a test).
-- Corrected the `CFG006` message: `security.toolSandboxing` defaults to
-  `false` in Gemini CLI upstream, so an explicit `false` is a documented
-  decision, not a hidden weakening. The finding now says that and points to
-  enabling it as the hardening action (verified against gemini-cli's
-  `docs/cli/sandbox.md` settings reference).
 - Added `docs/evaluation.md`: measured scan results for five real, maintainer-
   run repositories (official MCP servers, claude-code-action, GitHub's MCP
   server, LangChain MCP adapters, OpenAI agents SDK), with the review context
   for each non-low finding. The corpus also documents the trigger-detection
   false-positive class it caught before release.
-- Fixed trigger detection fabricating untrusted events: any bare `name:`-like
-  line (`issues: write` under `permissions:`, a `jobs:` key) previously counted
-  as a trigger, so schedule-only workflows picked up `issues`/`pull_request`
-  and then tripped GHA002/GHA005/GHA009. Triggers are now read structurally
-  from the `on:` block only (mapping, inline list, and scalar forms).
-  Measured on modelcontextprotocol/servers + anthropics/claude-code-action
-  (25 workflows): 3 files had spurious untrusted triggers before, 0 after,
-  with no missed real triggers. Regression tests pin both directions.
 - Added `GHA009`: verification, scan, lint, or install steps in an
   untrusted-trigger workflow that set `continue-on-error: true` are flagged
   (medium). A failing security scan or missing hardening step is silently
@@ -73,11 +33,6 @@
 - Added an HTML-report escaping regression test: scanned paths (attacker-
   influencable via directory/file names in a PR) are HTML-escaped before
   they reach the report markup, and the test pins that behavior.
-- `GHA003` now treats `github.event.workflow_run.head_branch` and
-  `github.event.workflow_run.head_commit.message` as untrusted shell input.
-  For `workflow_run` chains the upstream run can originate from a fork, and
-  the consuming workflow usually holds write permissions, so interpolating
-  those fields into `run:` blocks is shell injection.
 - Added registry/doc sync tests: every rule in the shipped registry must be
   documented in `docs/rules.md` (and vice versa) with a matching anchor id, so
   the README-linked rule reference and per-finding help URIs cannot drift.
@@ -86,6 +41,41 @@
   existing instruction basenames and markers. Skills are a common distribution
   vector for hidden-Unicode, injection phrasing, and download-and-execute
   instructions (compare `mcp-scan`, which scans MCP servers and skills).
+
+### Fixed
+
+- Scoped `GHA004`'s dangerous-shell arms: `--exec` flags and package-runner
+  subcommands (`pnpm exec turbo build`) no longer count as shell `exec`
+  builtins, and inline interpreter scripts (`node -e ...`) only flag when
+  the script consumes an attacker-influencable input sink
+  (argv/stdin/env/child_process/...). A fixed
+  `node -e "JSON.parse(readFileSync('manifest.json'))"` validation step is
+  common CI and no longer a finding. Measured on next.js (3 GHA004 -> 1),
+  ai-toolbox (1 -> 0), each case pinned by tests.
+- `PKG002` no longer flags `eval`/`exec` when they appear inside script file
+  names: the `\b` boundary treated the hyphen in `skill-eval.mjs` as a word
+  boundary (found scanning `modelcontextprotocol/inspector`'s package.json,
+  2 false positives). Standalone `eval`/`exec` commands still flag.
+- `AGENT003` now reports a quoted phrase inside explanatory prose at `info`
+  instead of `high`: security guidance that says `do not follow "ignore
+  previous instructions"` and detector reference tables that cite attack
+  strings are mentions, not payloads. Raw unquoted payload lines and
+  phrase-only quoted lines stay `high`. Measured on getsentry/sentry-
+  javascript's `.agents/skills` tree: 8 high downgraded to info, 0 raw
+  payloads downgraded (each case pinned by a test).
+- Fixed trigger detection fabricating untrusted events: any bare `name:`-like
+  line (`issues: write` under `permissions:`, a `jobs:` key) previously counted
+  as a trigger, so schedule-only workflows picked up `issues`/`pull_request`
+  and then tripped GHA002/GHA005/GHA009. Triggers are now read structurally
+  from the `on:` block only (mapping, inline list, and scalar forms).
+  Measured on modelcontextprotocol/servers + anthropics/claude-code-action
+  (25 workflows): 3 files had spurious untrusted triggers before, 0 after,
+  with no missed real triggers. Regression tests pin both directions.
+- `GHA003` now treats `github.event.workflow_run.head_branch` and
+  `github.event.workflow_run.head_commit.message` as untrusted shell input.
+  For `workflow_run` chains the upstream run can originate from a fork, and
+  the consuming workflow usually holds write permissions, so interpolating
+  those fields into `run:` blocks is shell injection.
 - `AGENT003` now matches real-world override phrasing that inserts an article,
   e.g. "ignore the previous instructions" (previously only the article-less
   "ignore previous instructions" matched), and the adjective list gained
@@ -97,6 +87,23 @@
   deletions) scanned everything. `ScanConfig.changed_paths` now uses `None` for
   "no path filter" and `()` for "nothing changed", with regression tests for the
   empty-diff and deletions-only cases.
+- Two agent-instruction precision fixes, both found by cross-scanning the
+  author's own workspace: `AGENT005` treated the opening `**` of markdown
+  bold (`Recommended tools: **Figma**`) as a `*` tool grant, and `AGENT003`
+  flagged benign prose where `leak` met the bare word `prompt` (`prompts
+  leak into training`). Wildcards now require a value boundary
+  (end/whitespace/comment) and not a preceding `*`; the leak pattern
+  requires a secret-like object, with `system prompt` / `hidden
+  instructions` covering the real payload cases. Each direction pinned by
+  tests; rigor's tree goes from 2 findings to 0.
+- Extended `docs/evaluation.md` with two larger trees (`vercel/next.js`,
+  768 files, ~1s scan; `getsentry/sentry-javascript`, 386 files) and the
+  precision notes those runs produced.
+- Corrected the `CFG006` message: `security.toolSandboxing` defaults to
+  `false` in Gemini CLI upstream, so an explicit `false` is a documented
+  decision, not a hidden weakening. The finding now says that and points to
+  enabling it as the hardening action (verified against gemini-cli's
+  `docs/cli/sandbox.md` settings reference).
 - Added `MCP010`, `MCP011`, and `MCP012` for remote (HTTP/SSE) MCP servers:
   plaintext `http://` transport, link-local/cloud-metadata targets (SSRF against
   the instance metadata service), and committed secret headers such as a literal
