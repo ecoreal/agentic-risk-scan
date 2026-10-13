@@ -4,6 +4,8 @@
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
+English · [中文](README.zh.md)
+
 Static security scanner for AI agent workflows, MCP configs, and committed agent
 instructions.
 

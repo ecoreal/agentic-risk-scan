@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added `README.zh.md`, a full Chinese translation cross-linked with the
+  English README; a regression test pins section parity, cross-links, and
+  the rule count against the registry.
+
 ## 0.11.0 - 2026-10-13
 
 ### Added

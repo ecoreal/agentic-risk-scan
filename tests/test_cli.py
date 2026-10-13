@@ -26,6 +26,31 @@ def capture_cli(args: list[str]) -> tuple[int, str, str]:
     return code, stdout.getvalue(), stderr.getvalue()
 
 
+class BilingualReadmeTests(unittest.TestCase):
+    def test_readmes_cross_link_and_keep_section_parity(self) -> None:
+        # Both READMEs are full translations; keep them structurally in sync
+        # and cross-linked (the sibling repos use the same convention).
+        root = Path(__file__).resolve().parents[1]
+        en = (root / "README.md").read_text(encoding="utf-8")
+        zh = (root / "README.zh.md").read_text(encoding="utf-8")
+
+        self.assertIn("[中文](README.zh.md)", en)
+        self.assertIn("[English](README.md)", zh)
+
+        en_sections = [line for line in en.splitlines() if line.startswith("## ")]
+        zh_sections = [line for line in zh.splitlines() if line.startswith("## ")]
+        self.assertEqual(len(en_sections), len(zh_sections))
+
+    def test_readme_rule_count_matches_the_registry(self) -> None:
+        from agentic_risk_scan.registry import RULES
+
+        root = Path(__file__).resolve().parents[1]
+        for name in ("README.md", "README.zh.md"):
+            text = (root / name).read_text(encoding="utf-8")
+            self.assertIn(f"{len(RULES)} ", text.split("rules")[0] + text)
+            self.assertRegex(text, rf"{len(RULES)}\s*(条|high-signal|高信号)")
+
+
 class VersionTests(unittest.TestCase):
     def test_package_version_is_single_sourced(self) -> None:
         # pyproject declares dynamic = ["version"] pointing at
