@@ -14,8 +14,18 @@ dangerous: write-capable GitHub tokens, untrusted shell interpolation, hidden
 Unicode prompt text, download-and-execute MCP servers, inline secrets, and risky
 install scripts.
 
-It is dependency-free, works on Python 3.10+, and is designed for CI, code review,
-and quick local audits.
+- **47 high-signal rules** across GitHub Actions, MCP configs, agent
+  instructions, agent client settings, and package scripts.
+- **Dependency-free** (Python 3.10+ standard library only) — one `pip install`,
+  no lockfiles to audit before you trust the auditor.
+- **CI-native**: composite GitHub Action, SARIF for code scanning, inline
+  PR annotations, and `--changed-from` incremental scans.
+- **Measured precision**: published corpus of real-repository scans with
+  before/after counts for every false-positive fix in
+  [docs/evaluation.md](docs/evaluation.md).
+- **Never runs your code**: static analysis only; no network calls and no
+  config execution. The only subprocess is `git diff` when you opt into
+  `--changed-from`.
 
 Read the deeper context:
 
