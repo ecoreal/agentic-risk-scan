@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Two agent-instruction precision fixes, both found by cross-scanning the
+  author's own workspace: `AGENT005` treated the opening `**` of markdown
+  bold (`Recommended tools: **Figma**`) as a `*` tool grant, and `AGENT003`
+  flagged benign prose where `leak` met the bare word `prompt` (`prompts
+  leak into training`). Wildcards now require a value boundary
+  (end/whitespace/comment) and not a preceding `*`; the leak pattern
+  requires a secret-like object, with `system prompt` / `hidden
+  instructions` covering the real payload cases. Each direction pinned by
+  tests; rigor's tree goes from 2 findings to 0.
 - `PKG002` no longer flags `eval`/`exec` when they appear inside script file
   names: the `\b` boundary treated the hyphen in `skill-eval.mjs` as a word
   boundary (found scanning `modelcontextprotocol/inspector`'s package.json,

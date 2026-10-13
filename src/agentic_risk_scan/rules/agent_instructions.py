@@ -71,7 +71,14 @@ PROMPT_INJECTION_PATTERNS = (
     ),
     re.compile(r"\boverride\s+(the\s+)?(system|developer)\s+(prompt|message|instructions)\b", re.I),
     re.compile(r"\breveal\s+(the\s+)?(system\s+prompt|developer\s+message|hidden\s+instructions)\b", re.I),
-    re.compile(r"\b(exfiltrate|steal|leak)\b.*\b(secret|token|credential|api key|prompt)\b", re.I),
+    # "leak" + bare "prompt" fires on benign prose ("prompts leak into
+    # training"); require a secret-like object, and when the object is a
+    # prompt make it the system/hidden kind.
+    re.compile(
+        r"\b(exfiltrate|steal|leak)\b.*\b(secret|token|credential|api[ _-]?key"
+        r"|system\s+prompt|hidden\s+instructions|developer\s+message)\b",
+        re.I,
+    ),
     re.compile(r"\bsend\b.*\b(secret|token|credential|api key)\b.*\b(http|https|webhook|server)\b", re.I),
 )
 
@@ -122,10 +129,15 @@ DANGEROUS_COMMAND_PATTERNS = (
     re.compile(r"\bbase64\s+(-d|--decode)\b.+\|\s*(sh|bash|python|node)", re.I),
 )
 
+# A wildcard grant ends the value: `allowed-tools: *`, `tools: all`, or a
+# bracketed list `["*"]`. Markdown bold (`tools: **Figma**`) starts with the
+# same asterisk but continues into text, so the `*` alternative requires a
+# value boundary (end of line, whitespace, or a `#` comment) and must not be
+# preceded by another `*`.
 BROAD_TOOL_PATTERNS = (
-    re.compile(r"\ballowed[-_ ]tools\s*:\s*(\*|all|bash\(\*\)|shell|terminal)\b", re.I),
-    re.compile(r"\btools\s*:\s*(\*|all|\[\s*['\"]?\*['\"]?\s*\])", re.I),
-    re.compile(r"\bpermissions\s*:\s*(\*|all|full[-_ ]access|dangerously)", re.I),
+    re.compile(r"\ballowed[-_ ]tools\s*:\s*(\*(?!\*)(?=\s|$|#)|all\b|bash\(\*\)|shell\b|terminal\b)", re.I | re.M),
+    re.compile(r"(?<!\*)\btools\s*:\s*(\*(?!\*)(?=\s|$|#)|all\b|\[\s*['\"]?\*['\"]?\s*\])", re.I | re.M),
+    re.compile(r"\bpermissions\s*:\s*(\*(?!\*)(?=\s|$|#)|all\b|full[-_ ]access|dangerously)", re.I | re.M),
 )
 
 
